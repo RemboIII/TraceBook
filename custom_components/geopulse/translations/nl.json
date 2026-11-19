@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "GeoPulse",
+        "description": "Kies de trackers waarvan je de locatiegeschiedenis wilt bewaren. Gezinsleden zijn alleen-lezen tijdlijnen uit de Home Assistant-recorder en zijn alleen zichtbaar voor beheerders.",
+        "data": {
+          "trackers": "Trackers",
+          "family": "Gezinsleden (alleen beheerder)",
+          "geocode": "Adressen opzoeken voor onbekende plekken",
+          "enabled": "Locatiegeschiedenis in het lokale archief bewaren",
+          "recorder_backfill_days": "Dagen recorderhistorie aanvullen",
+          "contacts_file": "Adresboekbestand (.vcf)",
+          "poi_sync": "Lokale OpenStreetMap-plekkenindex bijhouden"
+        }
+      }
+    },
+    "error": {
+      "no_trackers": "Selecteer minimaal één tracker.",
+      "unknown_entity": "Eén of meer geselecteerde entiteiten bestaan niet meer."
+    },
+    "abort": {
+      "single_instance_allowed": "GeoPulse is al ingesteld.",
+      "yaml_configured": "GeoPulse is ingesteld via configuration.yaml. Verwijder dat blok voordat je de gebruikersinterface gebruikt."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "GeoPulse-instellingen",
+        "description": "Wijzig de trackers, gezinstijdlijnen of archiefinstellingen.",
+        "data": {
+          "trackers": "Trackers",
+          "family": "Gezinsleden (alleen beheerder)",
+          "geocode": "Adressen opzoeken voor onbekende plekken",
+          "enabled": "Locatiegeschiedenis in het lokale archief bewaren",
+          "recorder_backfill_days": "Dagen recorderhistorie aanvullen",
+          "contacts_file": "Adresboekbestand (.vcf)",
+          "poi_sync": "Lokale OpenStreetMap-plekkenindex bijhouden"
+        }
+      }
+    },
+    "error": {
+      "no_trackers": "Selecteer minimaal één tracker.",
+      "unknown_entity": "Eén of meer geselecteerde entiteiten bestaan niet meer."
+    }
+  }
+}
