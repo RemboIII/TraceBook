@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "GeoPulse",
-        "description": "Kies de trackers waarvan je de locatiegeschiedenis wilt bewaren. Gezinsleden zijn alleen-lezen tijdlijnen uit de Home Assistant-recorder en zijn alleen zichtbaar voor beheerders.",
+        "description": "Kies welke apparaten worden gearchiveerd en welke personen alleen voor beheerders zichtbaar zijn. Trackers zijn bewerkbaar en worden volledig gearchiveerd; gezinsleden zijn admin-only maar worden ook gearchiveerd.",
         "data": {
           "trackers": "Trackers",
           "family": "Gezinsleden (alleen beheerder)",
@@ -12,6 +12,15 @@
           "recorder_backfill_days": "Dagen recorderhistorie aanvullen",
           "contacts_file": "Adresboekbestand (.vcf)",
           "poi_sync": "Lokale OpenStreetMap-plekkenindex bijhouden"
+        },
+        "data_description": {
+          "trackers": "Apparaten waarvan de volledige locatiegeschiedenis in het lokale archief wordt bewaard. Deze tijdlijnen zijn bewerkbaar en blijven bestaan nadat de recorder oude data verwijdert.",
+          "family": "Extra personen die alleen voor beheerders zichtbaar zijn. Hun punten worden ook gearchiveerd, maar gewone gebruikers zien deze tijdlijnen niet. Zet je eigen telefoon hier niet bij als die al bij Trackers staat.",
+          "geocode": "Zoekt via Photon/Nominatim een adres bij onbekende plekken. Hierbij worden coördinaten naar een externe dienst gestuurd. Zet dit uit om alles lokaal te houden.",
+          "enabled": "Bewaart elk locatiepunt in /config/HA_timeline/archive.db, onafhankelijk van de recorder-retentie. Zet dit uit als je alleen de recorder-tijdlijn via source: ha_history wilt gebruiken; importeren, exporteren en bewerken werken dan niet.",
+          "recorder_backfill_days": "Aantal dagen nog beschikbare HA-recorderhistorie dat bij de start in het archief wordt aangevuld. 0 schakelt dit uit. De recorder bewaart meestal ongeveer 10 dagen.",
+          "contacts_file": "Optioneel pad naar een .vcf-adresboek. Laat leeg voor de standaardlocatie /config/HA_timeline/contacts.vcf; bestaat die niet, dan wordt het adresboek overgeslagen. Het bestand wordt lokaal gelezen.",
+          "poi_sync": "Houdt een lokale index bij van OpenStreetMap-plekken (winkels, bedrijven, adressen). Daarmee zijn zoeken en de lijst binnen 75 m snel. De index wordt 's nachts via Overpass bijgewerkt."
         }
       }
     },
@@ -28,7 +37,7 @@
     "step": {
       "init": {
         "title": "GeoPulse-instellingen",
-        "description": "Wijzig de trackers, gezinstijdlijnen of archiefinstellingen.",
+        "description": "Kies welke apparaten worden gearchiveerd en welke personen alleen voor beheerders zichtbaar zijn. Trackers zijn bewerkbaar en worden volledig gearchiveerd; gezinsleden zijn admin-only maar worden ook gearchiveerd.",
         "data": {
           "trackers": "Trackers",
           "family": "Gezinsleden (alleen beheerder)",
@@ -37,6 +46,15 @@
           "recorder_backfill_days": "Dagen recorderhistorie aanvullen",
           "contacts_file": "Adresboekbestand (.vcf)",
           "poi_sync": "Lokale OpenStreetMap-plekkenindex bijhouden"
+        },
+        "data_description": {
+          "trackers": "Apparaten waarvan de volledige locatiegeschiedenis in het lokale archief wordt bewaard. Deze tijdlijnen zijn bewerkbaar en blijven bestaan nadat de recorder oude data verwijdert.",
+          "family": "Extra personen die alleen voor beheerders zichtbaar zijn. Hun punten worden ook gearchiveerd, maar gewone gebruikers zien deze tijdlijnen niet. Zet je eigen telefoon hier niet bij als die al bij Trackers staat.",
+          "geocode": "Zoekt via Photon/Nominatim een adres bij onbekende plekken. Hierbij worden coördinaten naar een externe dienst gestuurd. Zet dit uit om alles lokaal te houden.",
+          "enabled": "Bewaart elk locatiepunt in /config/HA_timeline/archive.db, onafhankelijk van de recorder-retentie. Zet dit uit als je alleen de recorder-tijdlijn via source: ha_history wilt gebruiken; importeren, exporteren en bewerken werken dan niet.",
+          "recorder_backfill_days": "Aantal dagen nog beschikbare HA-recorderhistorie dat bij de start in het archief wordt aangevuld. 0 schakelt dit uit. De recorder bewaart meestal ongeveer 10 dagen.",
+          "contacts_file": "Optioneel pad naar een .vcf-adresboek. Laat leeg voor de standaardlocatie /config/HA_timeline/contacts.vcf; bestaat die niet, dan wordt het adresboek overgeslagen. Het bestand wordt lokaal gelezen.",
+          "poi_sync": "Houdt een lokale index bij van OpenStreetMap-plekken (winkels, bedrijven, adressen). Daarmee zijn zoeken en de lijst binnen 75 m snel. De index wordt 's nachts via Overpass bijgewerkt."
         }
       }
     },

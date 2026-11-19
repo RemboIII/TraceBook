@@ -2,7 +2,7 @@
  * A Google Timeline-style day view backed by the local GeoPulse archive.
  */
 
-const CARD_VERSION = "2.0.0";
+const CARD_VERSION = "0.1.0";
 
 //: Text search in the visit editor only looks this far from the visit.
 const MAX_PLACE_SEARCH_METERS = 250;
@@ -524,6 +524,8 @@ const EN_TEXT = {
   "Deze dag opnieuw opbouwen? Handmatige aanpassingen aan de hele dag gaan verloren.":
     "Rebuild this day? Manual changes to the whole day will be lost.",
   "Bezig…": "Working…",
+  "Niet gevonden? Gebruik het veld Naam (optioneel) om dit bezoek zelf een naam te geven.":
+    "Not found? Use the Name (optional) field to give this visit a custom name.",
 };
 
 const EN_PATTERNS = [
@@ -3639,7 +3641,10 @@ class GeoPulseCard extends HTMLElement {
         : query
           ? `Geen plekken gevonden binnen ${MAX_PLACE_SEARCH_METERS} m`
           : `Geen bekende plekken binnen ${NEARBY_PLACE_RADIUS_METERS} m`;
-      list.innerHTML = `<div class="dt-comboempty">${esc(text)}</div>`;
+      const hint = query
+        ? '<div class="dt-combohint">Niet gevonden? Gebruik het veld Naam (optioneel) om dit bezoek zelf een naam te geven.</div>'
+        : "";
+      list.innerHTML = `<div class="dt-comboempty">${esc(text)}</div>${hint}`;
       return;
     }
 
@@ -5139,6 +5144,13 @@ class GeoPulseCard extends HTMLElement {
       }
       .dt-place-selected .dt-place-meta { color: var(--dt-primary); }
       .dt-place-meta ha-icon { --mdc-icon-size: 17px; }
+      .dt-combohint {
+        padding: 0 14px 12px;
+        text-align: center;
+        color: var(--dt-sub);
+        font-size: 12px;
+        line-height: 1.45;
+      }
       .dt-comboempty, .dt-comboloading {
         padding: 18px 12px; text-align: center;
         color: var(--dt-sub); font-size: 12.5px;

@@ -1,5 +1,7 @@
 # GeoPulse
 
+> **Status: 0.1.0 beta.** This is an early test release; expect rough edges.
+
 A Google Timeline-style day view for Home Assistant, built on a local SQLite
 archive. GeoPulse stores every location report from your device trackers
 independently of the recorder retention, so years of history stay available
@@ -24,12 +26,15 @@ without an external location service.
 
 ## Installation
 
-### HACS (custom repository)
+### Marketplace (custom GitHub link)
 
-1. Open HACS → Integrations → ⋮ → **Custom repositories**.
-2. Add `https://github.com/RemboIII/geopulse` as an **Integration**.
-3. Install **GeoPulse** and restart Home Assistant.
-4. Go to **Settings → Devices & services → Add integration → GeoPulse**.
+1. Open **Marketplace** in Home Assistant.
+2. Choose **Add via GitHub link**.
+3. Enter `https://github.com/RemboIII/geopulse`.
+4. Install **GeoPulse** and restart Home Assistant.
+5. Go to **Settings → Devices & services → Add integration → GeoPulse**.
+
+On older installations this is the HACS **Custom repositories** flow.
 
 The card is bundled with the integration and loaded automatically; you do not
 need a separate Lovelace resource.

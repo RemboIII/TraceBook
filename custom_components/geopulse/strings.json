@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "GeoPulse",
-        "description": "Choose the device trackers to archive. Family members are read-only timelines from the Home Assistant recorder and are only visible to administrators.",
+        "description": "Choose which devices are archived and which people are visible to administrators only. Trackers are editable and fully archived; family members are admin-only but are archived too.",
         "data": {
           "trackers": "Trackers",
           "family": "Family members (admin only)",
@@ -12,6 +12,15 @@
           "recorder_backfill_days": "Days of recorder history to backfill",
           "contacts_file": "Contacts file (.vcf)",
           "poi_sync": "Keep a local OpenStreetMap place index"
+        },
+        "data_description": {
+          "trackers": "Devices whose full location history is stored in the local archive. These timelines are editable and survive after the recorder deletes old data.",
+          "family": "Additional people visible to administrators only. Their points are archived too, but regular users do not see these timelines. Do not add your own phone here if it is already listed under Trackers.",
+          "geocode": "Looks up an address for unknown places via Photon/Nominatim. This sends coordinates to an external service; disable it to keep everything local.",
+          "enabled": "Stores every location report in /config/HA_timeline/archive.db, independent of the recorder retention. Disable this if you only want the recorder timeline via source: ha_history; importing, exporting and editing then stop working.",
+          "recorder_backfill_days": "Number of days of still-available recorder history copied into the archive at startup. 0 disables it. The recorder usually keeps about 10 days.",
+          "contacts_file": "Optional path to a .vcf contacts file. Leave empty for the default /config/HA_timeline/contacts.vcf; if it does not exist, contacts are skipped. The file is read locally.",
+          "poi_sync": "Keeps a local index of OpenStreetMap places (shops, businesses, addresses) for fast search and the 75 m nearby list. The index is refreshed nightly via Overpass."
         }
       }
     },
@@ -28,7 +37,7 @@
     "step": {
       "init": {
         "title": "GeoPulse settings",
-        "description": "Change the trackers, family timelines or archive settings.",
+        "description": "Choose which devices are archived and which people are visible to administrators only. Trackers are editable and fully archived; family members are admin-only but are archived too.",
         "data": {
           "trackers": "Trackers",
           "family": "Family members (admin only)",
@@ -37,6 +46,15 @@
           "recorder_backfill_days": "Days of recorder history to backfill",
           "contacts_file": "Contacts file (.vcf)",
           "poi_sync": "Keep a local OpenStreetMap place index"
+        },
+        "data_description": {
+          "trackers": "Devices whose full location history is stored in the local archive. These timelines are editable and survive after the recorder deletes old data.",
+          "family": "Additional people visible to administrators only. Their points are archived too, but regular users do not see these timelines. Do not add your own phone here if it is already listed under Trackers.",
+          "geocode": "Looks up an address for unknown places via Photon/Nominatim. This sends coordinates to an external service; disable it to keep everything local.",
+          "enabled": "Stores every location report in /config/HA_timeline/archive.db, independent of the recorder retention. Disable this if you only want the recorder timeline via source: ha_history; importing, exporting and editing then stop working.",
+          "recorder_backfill_days": "Number of days of still-available recorder history copied into the archive at startup. 0 disables it. The recorder usually keeps about 10 days.",
+          "contacts_file": "Optional path to a .vcf contacts file. Leave empty for the default /config/HA_timeline/contacts.vcf; if it does not exist, contacts are skipped. The file is read locally.",
+          "poi_sync": "Keeps a local index of OpenStreetMap places (shops, businesses, addresses) for fast search and the 75 m nearby list. The index is refreshed nightly via Overpass."
         }
       }
     },
