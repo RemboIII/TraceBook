@@ -367,6 +367,7 @@ async def websocket_local_update_journey(hass: HomeAssistant, connection, msg: d
         vol.Required("direction"): vol.In(
             ["tail_to_next", "head_to_previous"]
         ),
+        vol.Optional("target_key"): str,
     }
 )
 @websocket_api.async_response
@@ -387,6 +388,7 @@ async def websocket_local_move_journey_part(
         msg["track_key"],
         msg["split_ts"],
         msg["direction"],
+        msg.get("target_key"),
     )
     if result is None:
         connection.send_error(

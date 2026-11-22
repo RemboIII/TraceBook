@@ -15,7 +15,7 @@ without an external location service.
 - Calendar with a dot for every day that has data.
 - Edit visits: rename, choose a saved place, add a note, delete.
 - Edit trips: change the transport mode, add a note, merge or rebuild a day.
-- Move the first or last part of a route into the adjacent trip and let it adopt that trip's mode.
+- Move the first or last part of a route into another trip of the day and let it adopt that trip's mode.
 - Adjacent visits at the same place (or both at home) are merged automatically.
 - Search places worldwide and see how often you visited them within 75 m.
 - Fuzzy text search around a visit (max. 250 m).

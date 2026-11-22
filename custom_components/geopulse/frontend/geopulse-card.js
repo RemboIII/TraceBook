@@ -530,8 +530,11 @@ const EN_TEXT = {
   "Splitstijd:": "Split time:",
   "Eerste deel → vorige reis": "First part → previous trip",
   "Laatste deel → volgende reis": "Last part → next trip",
-  "Tussenliggende bezoeken worden verwijderd. Doorgaan?":
-    "Visits in between will be removed. Continue?",
+  "Tussenliggende bezoeken en reizen worden verwijderd. Doorgaan?":
+    "Visits and trips in between will be removed. Continue?",
+  "Doelreis": "Target trip",
+  "Laatste deel → gekozen reis": "Last part → selected trip",
+  "Eerste deel → gekozen reis": "First part → selected trip",
   "Deel verplaatst": "Part moved",
   "Verplaatsen mislukt": "Moving failed",
   "Kies een ander splitpunt.": "Choose another split point.",
@@ -1103,6 +1106,11 @@ class GeoPulseCard extends HTMLElement {
       } else if (event.target.matches(".dt-historyfile")) {
         const file = event.target.files?.[0];
         if (file) this._importHistoryFile(file);
+      } else if (event.target.matches("#dt-split-target")) {
+        if (this._journeyEdit) {
+          this._journeyEdit.targetKey = event.target.value;
+          this._renderJourneyDialog();
+        }
       }
     };
     this.shadowRoot.addEventListener("change", this._onShadowChange);
@@ -3895,6 +3903,16 @@ class GeoPulseCard extends HTMLElement {
       .filter((item) => item.type === "visit");
   }
 
+  _entriesBetween(first, second) {
+    const entries = this._data?.entries || [];
+    const a = entries.findIndex((item) => item.key === first.key);
+    const b = entries.findIndex((item) => item.key === second.key);
+    if (a < 0 || b < 0) return [];
+    const low = Math.min(a, b);
+    const high = Math.max(a, b);
+    return entries.slice(low + 1, high);
+  }
+
   _openJourneyEdit(trackId, key) {
     const entry = this._findJourney(trackId, key);
     if (!entry) return;
@@ -3902,10 +3920,13 @@ class GeoPulseCard extends HTMLElement {
     const route = routes.length === 1 ? routes[0] : null;
     const times = route?.times || [];
 
+    const next = this._nextJourney(entry);
+    const previous = this._previousJourney(entry);
     this._journeyEdit = {
       entry,
       route,
       splitIndex: times.length >= 4 ? Math.round((times.length - 1) / 2) : 0,
+      targetKey: next?.key || previous?.key || null,
       mode: entry.mode === "mixed" ? "" : entry.mode,
       note: entry.note || "",
       saving: false,
@@ -3973,17 +3994,39 @@ class GeoPulseCard extends HTMLElement {
           ${(() => {
             const times = edit.route?.times || [];
             if (times.length < 4) return "";
-            const next = this._nextJourney(entry);
-            const previous = this._previousJourney(entry);
-            if (!next && !previous) return "";
+            const entries = this._data?.entries || [];
+            const sourceIndex = entries.findIndex((item) => item.key === entry.key);
+            const otherJourneys = entries.filter(
+              (item) => item.type === "journey" && item.key !== entry.key
+            );
+            if (!otherJourneys.length) return "";
+            let target =
+              otherJourneys.find((item) => item.key === edit.targetKey) ||
+              this._nextJourney(entry) ||
+              this._previousJourney(entry) ||
+              otherJourneys[0];
+            if (!target) return "";
+            edit.targetKey = target.key;
+            const targetIndex = entries.findIndex((item) => item.key === target.key);
+            const tail = targetIndex > sourceIndex;
             const current = times[edit.splitIndex] || times[0];
-            const between = next
-              ? this._visitsBetween(entry, next)
-              : previous
-                ? this._visitsBetween(previous, entry)
-                : [];
+            const between = this._entriesBetween(entry, target);
+            const options = otherJourneys
+              .map(
+                (item) =>
+                  `<option value="${esc(item.key)}" ${
+                    item.key === target.key ? "selected" : ""
+                  }>${esc(fmtTime(item.start))} · ${esc(
+                    modeLabel(item.mode)
+                  )} · ${esc(fmtDistance(item.distance, item.distance_unit))}</option>`
+              )
+              .join("");
             return `
               <div class="dt-split">
+                <label class="dt-label" for="dt-split-target">Doelreis</label>
+                <select id="dt-split-target" class="dt-input dt-select">
+                  ${options}
+                </select>
                 <label class="dt-label" for="dt-split-range">Route splitsen</label>
                 <input id="dt-split-range" class="dt-splitrange" type="range"
                   min="2" max="${times.length - 2}" step="1"
@@ -3993,24 +4036,19 @@ class GeoPulseCard extends HTMLElement {
                 </div>
                 <div class="dt-splitactions">
                   ${
-                    previous
-                      ? `<button class="dt-btn" data-action="move-head">
-                          <ha-icon icon="mdi:arrow-collapse-left"></ha-icon>Eerste deel → vorige reis
-                        </button>`
-                      : ""
-                  }
-                  ${
-                    next
+                    tail
                       ? `<button class="dt-btn" data-action="move-tail">
-                          <ha-icon icon="mdi:arrow-collapse-right"></ha-icon>Laatste deel → volgende reis
+                          <ha-icon icon="mdi:arrow-collapse-right"></ha-icon>Laatste deel → gekozen reis
                         </button>`
-                      : ""
+                      : `<button class="dt-btn" data-action="move-head">
+                          <ha-icon icon="mdi:arrow-collapse-left"></ha-icon>Eerste deel → gekozen reis
+                        </button>`
                   }
                 </div>
                 <div class="dt-hint">
-                  Het gekozen deel gaat naar de aangrenzende reis en krijgt de
-                  methode van die reis. Tussenliggende bezoeken worden verwijderd.
-                  ${between.length ? `(${between.length} bezoek${between.length === 1 ? "" : "en"})` : ""}
+                  Het gekozen deel gaat naar de doelreis en krijgt de methode van
+                  die reis. Tussenliggende bezoeken en reizen worden verwijderd.
+                  ${between.length ? `(${between.length} tussenstap${between.length === 1 ? "" : "pen"})` : ""}
                 </div>
               </div>`;
           })()}
@@ -4079,20 +4117,16 @@ class GeoPulseCard extends HTMLElement {
       this._toast("Kies een ander splitpunt.", "error");
       return;
     }
-    const target =
-      direction === "tail_to_next"
-        ? this._nextJourney(edit.entry)
-        : this._previousJourney(edit.entry);
-    if (!target) return;
-    const between = this._visitsBetween(
-      direction === "tail_to_next" ? edit.entry : target,
-      direction === "tail_to_next" ? target : edit.entry
+    const target = (this._data?.entries || []).find(
+      (item) => item.key === edit.targetKey && item.type === "journey"
     );
+    if (!target) return;
+    const between = this._entriesBetween(edit.entry, target);
     if (
       between.length &&
       !window.confirm(
         translateText(
-          "Tussenliggende bezoeken worden verwijderd. Doorgaan?"
+          "Tussenliggende bezoeken en reizen worden verwijderd. Doorgaan?"
         )
       )
     ) {
@@ -4118,6 +4152,7 @@ class GeoPulseCard extends HTMLElement {
         track_key: String(edit.entry.key),
         split_ts: splitTs,
         direction,
+        target_key: String(target.key),
       });
       this._closeModal();
       this._toast("Deel verplaatst");

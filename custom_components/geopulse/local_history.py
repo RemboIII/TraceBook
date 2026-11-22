@@ -700,6 +700,7 @@ def move_journey_part(
     key: str,
     split_iso: str,
     direction: str,
+    target_key: str | None = None,
 ) -> dict[str, Any] | None:
     """Move the tail or head of a journey to the adjacent journey.
 
@@ -719,37 +720,51 @@ def move_journey_part(
     if source not in entries:
         return None
     source_index = entries.index(source)
+    tail = direction == "tail_to_next"
 
-    if direction == "tail_to_next":
-        target = next(
-            (
-                entry
-                for entry in entries[source_index + 1 :]
-                if entry.get("type") == "journey"
-            ),
-            None,
-        )
-        between = (
-            entries[source_index + 1 : entries.index(target)]
-            if target in entries
-            else []
-        )
-        tail = True
+    target = _find(payload, target_key) if target_key else None
+    if target is not None:
+        if target.get("type") != "journey" or target.get("key") == source.get("key"):
+            return None
+        if target not in entries:
+            return None
+        target_index = entries.index(target)
+        if tail and target_index <= source_index:
+            return None
+        if not tail and target_index >= source_index:
+            return None
+        between = entries[
+            min(source_index, target_index) + 1 : max(source_index, target_index)
+        ]
     else:
-        target = next(
-            (
-                entry
-                for entry in reversed(entries[:source_index])
-                if entry.get("type") == "journey"
-            ),
-            None,
-        )
-        between = (
-            entries[entries.index(target) + 1 : source_index]
-            if target in entries
-            else []
-        )
-        tail = False
+        if tail:
+            target = next(
+                (
+                    entry
+                    for entry in entries[source_index + 1 :]
+                    if entry.get("type") == "journey"
+                ),
+                None,
+            )
+            between = (
+                entries[source_index + 1 : entries.index(target)]
+                if target in entries
+                else []
+            )
+        else:
+            target = next(
+                (
+                    entry
+                    for entry in reversed(entries[:source_index])
+                    if entry.get("type") == "journey"
+                ),
+                None,
+            )
+            between = (
+                entries[entries.index(target) + 1 : source_index]
+                if target in entries
+                else []
+            )
 
     if target is None:
         return None
@@ -856,8 +871,11 @@ def move_journey_part(
     target_route.pop("segments", None)
 
     for entry in between:
+        entry_key = str(entry.get("key"))
         if entry.get("type") == "visit":
-            _remove_visit_with_memory(payload, str(entry.get("key")))
+            _remove_visit_with_memory(payload, entry_key)
+        else:
+            _remove(payload, entry_key)
 
     _recompute_summary(payload)
     return {"source": source, "target": target}
