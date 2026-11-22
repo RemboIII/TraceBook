@@ -189,16 +189,28 @@ async def build_local_day(
 
     rows = await archive.async_points(entity_id, start.timestamp(), end.timestamp())
     zones = _zone_lookup(hass)
-    points = [
-        Point(
-            time=datetime.fromtimestamp(row["ts"], tz),
-            latitude=float(row["lat"]),
-            longitude=float(row["lon"]),
-            state=_point_state(float(row["lat"]), float(row["lon"]), zones),
-            speed=float(row["speed"]) if row.get("speed") is not None else None,
+    points = []
+    for row in rows:
+        accuracy = row.get("accuracy")
+        if accuracy is not None:
+            try:
+                if float(accuracy) > 150:
+                    # A 150 m+ fix adds jitter to short walks without adding
+                    # useful detail.
+                    continue
+            except (TypeError, ValueError):
+                pass
+        points.append(
+            Point(
+                time=datetime.fromtimestamp(row["ts"], tz),
+                latitude=float(row["lat"]),
+                longitude=float(row["lon"]),
+                state=_point_state(float(row["lat"]), float(row["lon"]), zones),
+                speed=float(row["speed"])
+                if row.get("speed") is not None
+                else None,
+            )
         )
-        for row in rows
-    ]
 
     places = _archive_places(await archive.async_places(limit=500))
     payload = _build_day(hass, entity_id, day, points, places, tz)
@@ -634,6 +646,221 @@ def merge_journeys(payload: dict[str, Any], keys: list[str]) -> dict[str, Any] |
         _remove(payload, item["key"])
     _recompute_summary(payload)
     return first
+
+
+
+
+def _parse_moment(value: Any) -> datetime | None:
+    try:
+        return datetime.fromisoformat(str(value))
+    except (TypeError, ValueError):
+        return None
+
+
+def _path_distance_km(coordinates: list[Any]) -> float:
+    total = 0.0
+    previous = None
+    for coordinate in coordinates:
+        if not isinstance(coordinate, (list, tuple)) or len(coordinate) < 2:
+            continue
+        point = (float(coordinate[0]), float(coordinate[1]))
+        if previous is not None:
+            total += _distance_m(previous, point)
+        previous = point
+    return total / 1000
+
+
+def _route_times(route: dict[str, Any]) -> list[str]:
+    """Return one ISO timestamp per coordinate, interpolating if needed."""
+    coordinates = route.get("coordinates") or []
+    times = [str(item) for item in (route.get("times") or [])]
+    if len(times) == len(coordinates) and times:
+        return times
+    start = _parse_moment(route.get("start"))
+    end = _parse_moment(route.get("end"))
+    if start is None or end is None or len(coordinates) < 2:
+        return [""] * len(coordinates)
+    step = (end - start) / (len(coordinates) - 1)
+    return [(start + step * index).isoformat() for index in range(len(coordinates))]
+
+
+def _set_route_times(route: dict[str, Any], times: list[str]) -> None:
+    route["times"] = times
+
+
+def _remove_visit_with_memory(payload: dict[str, Any], key: str) -> None:
+    _remove(payload, key)
+    deleted = payload.setdefault("deleted_keys", [])
+    if key not in deleted:
+        deleted.append(key)
+
+
+def move_journey_part(
+    payload: dict[str, Any],
+    key: str,
+    split_iso: str,
+    direction: str,
+) -> dict[str, Any] | None:
+    """Move the tail or head of a journey to the adjacent journey.
+
+    ``tail_to_next`` moves everything after ``split_iso`` to the next journey
+    in the day; ``head_to_previous`` moves everything before it to the previous
+    journey.  Visits between source and target are removed because the moved
+    track crosses their time span; the user can rebuild the day to undo this.
+    """
+    if direction not in ("tail_to_next", "head_to_previous"):
+        return None
+    source = _find(payload, key)
+    if source is None or source.get("type") != "journey":
+        return None
+
+    entries = payload.get("entries") or []
+    entries.sort(key=lambda item: item.get("start") or "")
+    if source not in entries:
+        return None
+    source_index = entries.index(source)
+
+    if direction == "tail_to_next":
+        target = next(
+            (
+                entry
+                for entry in entries[source_index + 1 :]
+                if entry.get("type") == "journey"
+            ),
+            None,
+        )
+        between = (
+            entries[source_index + 1 : entries.index(target)]
+            if target in entries
+            else []
+        )
+        tail = True
+    else:
+        target = next(
+            (
+                entry
+                for entry in reversed(entries[:source_index])
+                if entry.get("type") == "journey"
+            ),
+            None,
+        )
+        between = (
+            entries[entries.index(target) + 1 : source_index]
+            if target in entries
+            else []
+        )
+        tail = False
+
+    if target is None:
+        return None
+
+    route = _route_for(payload, key)
+    if route is None:
+        return None
+    coordinates = list(route.get("coordinates") or [])
+    if len(coordinates) < 4:
+        return None
+    times = _route_times(route)
+    split = _parse_moment(split_iso)
+    if split is None:
+        split = _parse_moment(times[len(times) // 2])
+    if split is None:
+        return None
+
+    index = len(coordinates) - 1
+    for position, stamp in enumerate(times):
+        moment = _parse_moment(stamp)
+        if moment is not None and moment >= split:
+            index = position
+            break
+    index = max(2, min(index, len(coordinates) - 2))
+
+    if tail:
+        keep_coordinates = coordinates[:index]
+        keep_times = times[:index]
+        moved_coordinates = coordinates[index:]
+        moved_times = times[index:]
+    else:
+        keep_coordinates = coordinates[index:]
+        keep_times = times[index:]
+        moved_coordinates = coordinates[:index]
+        moved_times = times[:index]
+
+    if len(keep_coordinates) < 2 or len(moved_coordinates) < 2:
+        return None
+
+    source["start"] = keep_times[0] or source.get("start")
+    source["end"] = keep_times[-1] or source.get("end")
+    source["distance"] = round(_path_distance_km(keep_coordinates), 1)
+    source_begin = _parse_moment(source["start"])
+    source_finish = _parse_moment(source["end"])
+    if source_begin is not None and source_finish is not None:
+        source["duration_seconds"] = max(
+            0, int((source_finish - source_begin).total_seconds())
+        )
+    source["user_edited"] = True
+    route["coordinates"] = keep_coordinates
+    _set_route_times(route, keep_times)
+    route["start"] = source["start"]
+    route["end"] = source["end"]
+    route["distance"] = source["distance"]
+    route["duration_seconds"] = source["duration_seconds"]
+    route.pop("segments", None)
+
+    target_route = _route_for(payload, str(target.get("key")))
+    if target_route is None:
+        target_route = {
+            "track_id": target.get("key"),
+            "mode": target.get("mode") or "unknown",
+            "color": target.get("color") or MODE_COLORS["unknown"],
+            "coordinates": [],
+            "times": [],
+            "distance": float(target.get("distance") or 0),
+            "duration_seconds": int(target.get("duration_seconds") or 0),
+            "start": target.get("start"),
+            "end": target.get("end"),
+        }
+        payload.setdefault("routes", []).append(target_route)
+    target_coordinates = list(target_route.get("coordinates") or [])
+    target_times = _route_times(target_route)
+
+    if tail:
+        target_coordinates = moved_coordinates + target_coordinates
+        target_times = moved_times + target_times
+        target["start"] = moved_times[0] or target.get("start")
+    else:
+        target_coordinates = target_coordinates + moved_coordinates
+        target_times = target_times + moved_times
+        target["end"] = moved_times[-1] or target.get("end")
+
+    target["distance"] = round(
+        float(target.get("distance") or 0)
+        + _path_distance_km(moved_coordinates),
+        1,
+    )
+    target_begin = _parse_moment(target["start"])
+    target_finish = _parse_moment(target["end"])
+    if target_begin is not None and target_finish is not None:
+        target["duration_seconds"] = max(
+            0, int((target_finish - target_begin).total_seconds())
+        )
+    target["user_edited"] = True
+    target_route["coordinates"] = target_coordinates
+    _set_route_times(target_route, target_times)
+    target_route["start"] = target["start"]
+    target_route["end"] = target["end"]
+    target_route["distance"] = target["distance"]
+    target_route["duration_seconds"] = target["duration_seconds"]
+    target_route["mode"] = target.get("mode") or target_route.get("mode")
+    target_route["color"] = target.get("color") or target_route.get("color")
+    target_route.pop("segments", None)
+
+    for entry in between:
+        if entry.get("type") == "visit":
+            _remove_visit_with_memory(payload, str(entry.get("key")))
+
+    _recompute_summary(payload)
+    return {"source": source, "target": target}
 
 
 def reset_day(payload: dict[str, Any]) -> None:

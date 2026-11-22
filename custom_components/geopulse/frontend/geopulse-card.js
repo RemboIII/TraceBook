@@ -2,7 +2,7 @@
  * A Google Timeline-style day view backed by the local GeoPulse archive.
  */
 
-const CARD_VERSION = "0.1.0";
+const CARD_VERSION = "0.2.0";
 
 //: Text search in the visit editor only looks this far from the visit.
 const MAX_PLACE_SEARCH_METERS = 250;
@@ -526,6 +526,20 @@ const EN_TEXT = {
   "Bezig…": "Working…",
   "Niet gevonden? Gebruik het veld Naam (optioneel) om dit bezoek zelf een naam te geven.":
     "Not found? Use the Name (optional) field to give this visit a custom name.",
+  "Route splitsen": "Split route",
+  "Splitstijd:": "Split time:",
+  "Eerste deel → vorige reis": "First part → previous trip",
+  "Laatste deel → volgende reis": "Last part → next trip",
+  "Tussenliggende bezoeken worden verwijderd. Doorgaan?":
+    "Visits in between will be removed. Continue?",
+  "Deel verplaatst": "Part moved",
+  "Verplaatsen mislukt": "Moving failed",
+  "Kies een ander splitpunt.": "Choose another split point.",
+  "Verplaatsen…": "Moving…",
+  "Het gekozen deel gaat naar de aangrenzende reis en krijgt de methode van die reis. Tussenliggende bezoeken worden verwijderd.":
+    "The selected part is moved to the adjacent trip and adopts its mode. Visits in between are removed.",
+  "Deze reis bestaat uit": "This trip consists of",
+  "ritten.": "parts.",
 };
 
 const EN_PATTERNS = [
@@ -1059,6 +1073,14 @@ class GeoPulseCard extends HTMLElement {
             () => this._searchComboOSM(query),
             350
           );
+        }
+      } else if (event.target.matches(".dt-splitrange")) {
+        if (this._journeyEdit) {
+          const index = Number(event.target.value);
+          this._journeyEdit.splitIndex = index;
+          const times = this._journeyEdit.route?.times || [];
+          const label = this._modal?.querySelector(".dt-splittime");
+          if (label) label.textContent = fmtTime(times[index]);
         }
       } else if (event.target.matches(".dt-placesinput")) {
         this._placesSearch.query = event.target.value;
@@ -3830,12 +3852,60 @@ class GeoPulseCard extends HTMLElement {
     );
   }
 
+  _routesForEntry(entry) {
+    const ids = new Set(
+      [entry.key, entry.track_id, ...(entry.track_ids || [])].map(String)
+    );
+    return (this._data?.routes || []).filter((route) =>
+      ids.has(String(route.track_id))
+    );
+  }
+
+  _nextJourney(entry) {
+    const entries = this._data?.entries || [];
+    const index = entries.findIndex((item) => item.key === entry.key);
+    if (index < 0) return null;
+    return (
+      entries
+        .slice(index + 1)
+        .find((item) => item.type === "journey") || null
+    );
+  }
+
+  _previousJourney(entry) {
+    const entries = this._data?.entries || [];
+    const index = entries.findIndex((item) => item.key === entry.key);
+    if (index < 0) return null;
+    return (
+      [...entries.slice(0, index)]
+        .reverse()
+        .find((item) => item.type === "journey") || null
+    );
+  }
+
+  _visitsBetween(first, second) {
+    const entries = this._data?.entries || [];
+    const a = entries.findIndex((item) => item.key === first.key);
+    const b = entries.findIndex((item) => item.key === second.key);
+    if (a < 0 || b < 0) return [];
+    const low = Math.min(a, b);
+    const high = Math.max(a, b);
+    return entries
+      .slice(low + 1, high)
+      .filter((item) => item.type === "visit");
+  }
+
   _openJourneyEdit(trackId, key) {
     const entry = this._findJourney(trackId, key);
     if (!entry) return;
+    const routes = this._routesForEntry(entry);
+    const route = routes.length === 1 ? routes[0] : null;
+    const times = route?.times || [];
 
     this._journeyEdit = {
       entry,
+      route,
+      splitIndex: times.length >= 4 ? Math.round((times.length - 1) / 2) : 0,
       mode: entry.mode === "mixed" ? "" : entry.mode,
       note: entry.note || "",
       saving: false,
@@ -3899,6 +3969,51 @@ class GeoPulseCard extends HTMLElement {
                 </div>`
               : ""
           }
+
+          ${(() => {
+            const times = edit.route?.times || [];
+            if (times.length < 4) return "";
+            const next = this._nextJourney(entry);
+            const previous = this._previousJourney(entry);
+            if (!next && !previous) return "";
+            const current = times[edit.splitIndex] || times[0];
+            const between = next
+              ? this._visitsBetween(entry, next)
+              : previous
+                ? this._visitsBetween(previous, entry)
+                : [];
+            return `
+              <div class="dt-split">
+                <label class="dt-label" for="dt-split-range">Route splitsen</label>
+                <input id="dt-split-range" class="dt-splitrange" type="range"
+                  min="2" max="${times.length - 2}" step="1"
+                  value="${edit.splitIndex}">
+                <div class="dt-splitmeta">Splitstijd:
+                  <b class="dt-splittime">${esc(fmtTime(current))}</b>
+                </div>
+                <div class="dt-splitactions">
+                  ${
+                    previous
+                      ? `<button class="dt-btn" data-action="move-head">
+                          <ha-icon icon="mdi:arrow-collapse-left"></ha-icon>Eerste deel → vorige reis
+                        </button>`
+                      : ""
+                  }
+                  ${
+                    next
+                      ? `<button class="dt-btn" data-action="move-tail">
+                          <ha-icon icon="mdi:arrow-collapse-right"></ha-icon>Laatste deel → volgende reis
+                        </button>`
+                      : ""
+                  }
+                </div>
+                <div class="dt-hint">
+                  Het gekozen deel gaat naar de aangrenzende reis en krijgt de
+                  methode van die reis. Tussenliggende bezoeken worden verwijderd.
+                  ${between.length ? `(${between.length} bezoek${between.length === 1 ? "" : "en"})` : ""}
+                </div>
+              </div>`;
+          })()}
         </div>
 
         <div class="dt-dlg-actions">
@@ -3947,6 +4062,69 @@ class GeoPulseCard extends HTMLElement {
     } catch (err) {
       console.error("GeoPulse: reis opslaan mislukt", err);
       this._toast(err?.message || "Opslaan mislukt", "error");
+      edit.saving = false;
+      if (button) {
+        button.disabled = false;
+        button.innerHTML = original;
+      }
+    }
+  }
+
+  async _moveJourneyPart(direction) {
+    const edit = this._journeyEdit;
+    if (!edit || edit.saving || !edit.route) return;
+    const times = edit.route.times || [];
+    const splitTs = times[edit.splitIndex];
+    if (!splitTs) {
+      this._toast("Kies een ander splitpunt.", "error");
+      return;
+    }
+    const target =
+      direction === "tail_to_next"
+        ? this._nextJourney(edit.entry)
+        : this._previousJourney(edit.entry);
+    if (!target) return;
+    const between = this._visitsBetween(
+      direction === "tail_to_next" ? edit.entry : target,
+      direction === "tail_to_next" ? target : edit.entry
+    );
+    if (
+      between.length &&
+      !window.confirm(
+        translateText(
+          "Tussenliggende bezoeken worden verwijderd. Doorgaan?"
+        )
+      )
+    ) {
+      return;
+    }
+
+    const button = this._modal.querySelector(
+      direction === "tail_to_next"
+        ? '[data-action="move-tail"]'
+        : '[data-action="move-head"]'
+    );
+    const original = button?.innerHTML;
+    edit.saving = true;
+    if (button) {
+      button.disabled = true;
+      button.innerHTML = '<span class="dt-btnspinner"></span>Verplaatsen…';
+    }
+    try {
+      await this._hass.callWS({
+        type: "geopulse/local_move_journey_part",
+        date: this._date,
+        entity_id: this._localEntity(),
+        track_key: String(edit.entry.key),
+        split_ts: splitTs,
+        direction,
+      });
+      this._closeModal();
+      this._toast("Deel verplaatst");
+      await this._loadDay();
+    } catch (err) {
+      console.error("GeoPulse: routedeel verplaatsen mislukt", err);
+      this._toast(err?.message || "Verplaatsen mislukt", "error");
       edit.saving = false;
       if (button) {
         button.disabled = false;
@@ -4131,6 +4309,12 @@ class GeoPulseCard extends HTMLElement {
           return;
         case "save-journey":
           this._saveJourney();
+          return;
+        case "move-tail":
+          this._moveJourneyPart("tail_to_next");
+          return;
+        case "move-head":
+          this._moveJourneyPart("head_to_previous");
           return;
         case "confirm-visit":
           if (entry) this._confirmVisit(actionEl, entry.dataset.visitId);
@@ -5157,6 +5341,31 @@ class GeoPulseCard extends HTMLElement {
         display: flex; align-items: center; justify-content: center; gap: 8px;
       }
 
+      .dt-split {
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid var(--dt-divider);
+      }
+      .dt-splitrange {
+        width: 100%;
+        margin: 6px 0 2px;
+        accent-color: var(--dt-primary);
+      }
+      .dt-splitmeta {
+        font-size: 12px;
+        color: var(--dt-sub);
+      }
+      .dt-splitactions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+      }
+      .dt-splitactions .dt-btn {
+        flex: 1 1 180px;
+        font-size: 12px;
+        padding: 8px 10px;
+      }
       .dt-dlg-actions {
         display: flex; align-items: center; gap: 8px;
         padding: 13px 18px;

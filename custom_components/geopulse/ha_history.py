@@ -23,7 +23,7 @@ from homeassistant.components.recorder.history import get_significant_states
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .geo import _distance_m, _simplify_path
+from .geo import _distance_m, _simplify_path_with_times, _smooth_path
 from .const import DOMAIN, MODE_COLORS
 
 _LOGGER = logging.getLogger(__name__)
@@ -473,6 +473,7 @@ def _snap_routes_to_visits(
         coordinates = route.get("coordinates") or []
         if not coordinates:
             continue
+        times = list(route.get("times") or [])
         start = moment(route.get("start"))
         end = moment(route.get("end"))
         for visit in visits:
@@ -497,6 +498,8 @@ def _snap_routes_to_visits(
                     coordinates.append(
                         [round(center[0], 5), round(center[1], 5)]
                     )
+                    if times:
+                        times.append(str(visit.get("start") or route.get("end") or ""))
             if (
                 start is not None
                 and visit_end is not None
@@ -509,7 +512,13 @@ def _snap_routes_to_visits(
                     coordinates.insert(
                         0, [round(center[0], 5), round(center[1], 5)]
                     )
+                    if times:
+                        times.insert(
+                            0, str(visit.get("end") or route.get("start") or "")
+                        )
         route["coordinates"] = coordinates
+        if times:
+            route["times"] = times
 
 
 def _journey_stats(points: list[Point]) -> tuple[float, float, float]:
@@ -916,14 +925,32 @@ def _build_day(
                 "merged": False,
             }
             journeys.append(journey)
+            raw_coords = [
+                (point.latitude, point.longitude) for point in segment
+            ]
+            raw_times = [point.time.isoformat() for point in segment]
+            if mode in ("walking", "running"):
+                # Walking tracks are short and benefit from more detail and a
+                # light smoothing pass; driving tracks stay compact.
+                raw_coords = _smooth_path(raw_coords, passes=1)
+                min_m = 0.7
+                max_points = 3000
+            else:
+                min_m = 1.2
+                max_points = 1600
+            coordinates, times = _simplify_path_with_times(
+                raw_coords,
+                raw_times,
+                min_m=min_m,
+                max_points=max_points,
+            )
             routes.append(
                 {
                     "track_id": track_id,
                     "mode": mode,
                     "color": MODE_COLORS.get(mode, MODE_COLORS["unknown"]),
-                    "coordinates": _simplify_path(
-                        [(point.latitude, point.longitude) for point in segment]
-                    ),
+                    "coordinates": coordinates,
+                    "times": times,
                     "distance": journey["distance"],
                     "duration_seconds": journey["duration_seconds"],
                     "start": start_iso,

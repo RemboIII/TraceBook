@@ -58,6 +58,7 @@ def async_register_local_websocket_api(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_local_delete_visit)
     websocket_api.async_register_command(hass, websocket_local_merge_visits)
     websocket_api.async_register_command(hass, websocket_local_update_journey)
+    websocket_api.async_register_command(hass, websocket_local_move_journey_part)
     websocket_api.async_register_command(hass, websocket_local_merge_journeys)
     websocket_api.async_register_command(hass, websocket_local_reset_day)
     websocket_api.async_register_command(hass, websocket_local_places)
@@ -354,6 +355,48 @@ async def websocket_local_update_journey(hass: HomeAssistant, connection, msg: d
         return
     await archive.async_save_snapshot(msg["entity_id"], msg["date"], payload)
     connection.send_result(msg["id"], {"journey": entry, "day": payload})
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "geopulse/local_move_journey_part",
+        vol.Required("date"): str,
+        vol.Required("entity_id"): cv.entity_id,
+        vol.Required("track_key"): str,
+        vol.Required("split_ts"): str,
+        vol.Required("direction"): vol.In(
+            ["tail_to_next", "head_to_previous"]
+        ),
+    }
+)
+@websocket_api.async_response
+async def websocket_local_move_journey_part(
+    hass: HomeAssistant, connection, msg: dict
+) -> None:
+    """Move the head or tail of a trip into the adjacent trip."""
+    if not _check_access(hass, connection, msg["entity_id"]):
+        _send_unauthorized(connection, msg, "Geen toegang tot deze tijdlijn")
+        return
+    archive = _archive(hass)
+    if archive is None:
+        connection.send_error(msg["id"], "archive_disabled", "Archief staat uit")
+        return
+    payload = await _mutable_day(hass, archive, msg["entity_id"], msg["date"])
+    result = local_history.move_journey_part(
+        payload,
+        msg["track_key"],
+        msg["split_ts"],
+        msg["direction"],
+    )
+    if result is None:
+        connection.send_error(
+            msg["id"],
+            websocket_api.ERR_INVALID_FORMAT,
+            "Dit deel kan niet worden verplaatst",
+        )
+        return
+    await archive.async_save_snapshot(msg["entity_id"], msg["date"], payload)
+    connection.send_result(msg["id"], {"day": payload, **result})
 
 
 @websocket_api.websocket_command(
