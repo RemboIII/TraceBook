@@ -33,6 +33,7 @@ STAY_MIN_MINUTES = 8
 STAY_MERGE_RADIUS_M = 200
 STAY_MERGE_GAP_MINUTES = 30
 STAY_EDGE_SPEED_MPS = 1.0
+STAY_MAX_AVG_MPS = 0.5
 ZONE_MERGE_GAP_MINUTES = 10
 ZONE_MERGE_SLACK_M = 50
 PLACE_RADIUS_M = 300
@@ -334,6 +335,19 @@ def _gps_stays(
                 >= timedelta(minutes=STAY_MIN_MINUTES)
             ):
                 segment = free[begin : finish + 1]
+                seconds = (segment[-1].time - segment[0].time).total_seconds()
+                walked = sum(
+                    _distance_m(
+                        (first.latitude, first.longitude),
+                        (second.latitude, second.longitude),
+                    )
+                    for first, second in zip(segment, segment[1:])
+                )
+                if seconds > 0 and walked / seconds > STAY_MAX_AVG_MPS:
+                    # A slow stroll inside the search radius is movement,
+                    # not a visit.  Let those points become a route.
+                    index = last + 1
+                    continue
                 states = [point.state for point in segment if point.state]
                 stays.append(
                     {
