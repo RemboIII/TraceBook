@@ -22,7 +22,17 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          NOTES="$(git tag -l --format='%(contents)' "${GITHUB_REF_NAME}")"
+          # actions/checkout can expose the tag as a lightweight ref, so
+          # %(contents) would return the commit message instead of the
+          # annotated tag message.  Read the tag object itself.
+          REF="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${GITHUB_REF_NAME}")"
+          TYPE="$(printf '%s' "${REF}" | jq -r '.object.type')"
+          SHA="$(printf '%s' "${REF}" | jq -r '.object.sha')"
+          if [ "${TYPE}" = "tag" ]; then
+            NOTES="$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${SHA}" --jq '.message')"
+          else
+            NOTES="$(git log -1 --format=%B "${SHA}")"
+          fi
           if [ -z "${NOTES}" ]; then
             NOTES="GeoPulse ${VERSION}"
           fi
