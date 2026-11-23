@@ -14,28 +14,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Create release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          cat > release-notes.md <<NOTES
-          GeoPulse ${VERSION}
-
-          New
-          - Move the first or last part of a route into a chosen trip of the day. The moved part adopts the mode of that trip; trips and visits in between are removed after a confirmation.
-          - New GeoPulse app icon.
-
-          Improved
-          - Walking and running tracks use more detail points and a light smoothing pass.
-          - GPS fixes with an accuracy worse than 150 m are skipped.
-          - Routes carry one timestamp per point, so splitting is time-accurate.
-          NOTES
+          NOTES="$(git tag -l --format='%(contents)' "${GITHUB_REF_NAME}")"
+          if [ -z "${NOTES}" ]; then
+            NOTES="GeoPulse ${VERSION}"
+          fi
           if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
             gh release delete "${GITHUB_REF_NAME}" -y
           fi
           gh release create "${GITHUB_REF_NAME}" \
             --title "${VERSION}" \
-            --notes-file release-notes.md \
+            --notes "${NOTES}" \
             --verify-tag
