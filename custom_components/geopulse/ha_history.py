@@ -32,9 +32,11 @@ STAY_RADIUS_M = 120
 STAY_MIN_MINUTES = 8
 STAY_MERGE_RADIUS_M = 200
 STAY_MERGE_GAP_MINUTES = 30
+STAY_EDGE_SPEED_MPS = 1.0
 ZONE_MERGE_GAP_MINUTES = 10
+ZONE_MERGE_SLACK_M = 50
 PLACE_RADIUS_M = 300
-JOURNEY_MIN_METERS = 300
+JOURNEY_MIN_METERS = 50
 JOURNEY_MIN_AVG_KMH = 1.0
 HOME_RADIUS_M = 150
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/reverse"
@@ -165,6 +167,30 @@ def _build_points(
     return points
 
 
+def _gap_within_zone(
+    points: list[Point],
+    begin: datetime,
+    finish: datetime,
+    zone: Zone,
+) -> bool:
+    """Return False when points between two zone stays leave the zone.
+
+    A short walk can start and end inside the same zone within ten minutes.
+    Merging those two stays would hide the walk, so only join a gap when all
+    points in it are still close to the zone centre.
+    """
+    if zone.latitude is None or zone.longitude is None:
+        return True
+    limit = zone.radius + ZONE_MERGE_SLACK_M
+    for point in points:
+        if begin < point.time < finish and _distance_m(
+            (point.latitude, point.longitude),
+            (zone.latitude, zone.longitude),
+        ) > limit:
+            return False
+    return True
+
+
 def _zone_visits(
     points: list[Point],
     zones: dict[str, Zone],
@@ -180,8 +206,6 @@ def _zone_visits(
         if zone is not None:
             if current is not None and current["name"] == zone.name:
                 current["end"] = point.time
-                current["latitude"] = point.latitude
-                current["longitude"] = point.longitude
             else:
                 if current is not None:
                     periods.append(current)
@@ -218,14 +242,17 @@ def _zone_visits(
     result.sort(key=lambda item: item["start"])
     merged: list[dict[str, Any]] = []
     for period in result:
-        if (
-            merged
-            and merged[-1]["name"] == period["name"]
-            and (period["start"] - merged[-1]["end"])
-            <= timedelta(minutes=ZONE_MERGE_GAP_MINUTES)
-        ):
-            merged[-1]["end"] = period["end"]
-            continue
+        if merged and merged[-1]["name"] == period["name"]:
+            gap = period["start"] - merged[-1]["end"]
+            zone = zones.get(period["name"].lower())
+            if gap <= timedelta(minutes=ZONE_MERGE_GAP_MINUTES) and (
+                zone is None
+                or _gap_within_zone(
+                    points, merged[-1]["end"], period["start"], zone
+                )
+            ):
+                merged[-1]["end"] = period["end"]
+                continue
         merged.append(period)
 
     # If the last sample still reports a zone, the person stayed there until
@@ -238,6 +265,19 @@ def _zone_visits(
             merged[-1]["end"] = end
 
     return merged
+
+
+def _step_speed_mps(first: Point, second: Point) -> float:
+    seconds = (second.time - first.time).total_seconds()
+    if seconds <= 0:
+        return 0.0
+    return (
+        _distance_m(
+            (first.latitude, first.longitude),
+            (second.latitude, second.longitude),
+        )
+        / seconds
+    )
 
 
 def _gps_stays(
@@ -275,19 +315,39 @@ def _gps_stays(
 
         duration = free[last].time - base.time
         if duration >= timedelta(minutes=STAY_MIN_MINUTES):
-            segment = free[index : last + 1]
-            states = [point.state for point in segment if point.state]
-            stays.append(
-                {
-                    "start": base.time,
-                    "end": free[last].time,
-                    "latitude": mean(point.latitude for point in segment),
-                    "longitude": mean(point.longitude for point in segment),
-                    "count": len(segment),
-                    "states": states,
-                }
-            )
-            index = last + 1
+            # Walking out of a stay stays within the search radius for a
+            # while.  Trim those moving edges so the walk becomes a route
+            # instead of being swallowed by the visit.
+            begin, finish = index, last
+            while begin < finish and (
+                _step_speed_mps(free[begin], free[begin + 1])
+                > STAY_EDGE_SPEED_MPS
+            ):
+                begin += 1
+            while finish > begin and (
+                _step_speed_mps(free[finish - 1], free[finish])
+                > STAY_EDGE_SPEED_MPS
+            ):
+                finish -= 1
+            if (
+                free[finish].time - free[begin].time
+                >= timedelta(minutes=STAY_MIN_MINUTES)
+            ):
+                segment = free[begin : finish + 1]
+                states = [point.state for point in segment if point.state]
+                stays.append(
+                    {
+                        "start": free[begin].time,
+                        "end": free[finish].time,
+                        "latitude": mean(point.latitude for point in segment),
+                        "longitude": mean(point.longitude for point in segment),
+                        "count": len(segment),
+                        "states": states,
+                    }
+                )
+                index = finish + 1
+            else:
+                index = last + 1
         else:
             index += 1
 
@@ -476,46 +536,55 @@ def _snap_routes_to_visits(
         times = list(route.get("times") or [])
         start = moment(route.get("start"))
         end = moment(route.get("end"))
-        for visit in visits:
-            visit_start = moment(visit.get("start"))
-            visit_end = moment(visit.get("end"))
-            try:
-                center = (
-                    float(visit["latitude"]),
-                    float(visit["longitude"]),
+
+        def best_match(
+            target: datetime, attribute: str
+        ) -> tuple[dict[str, Any], tuple[float, float]] | None:
+            """Pick the nearest visit in time, not every visit within range."""
+            best: tuple[dict[str, Any], tuple[float, float]] | None = None
+            best_delta: float | None = None
+            for visit in visits:
+                visit_moment = moment(visit.get(attribute))
+                if visit_moment is None:
+                    continue
+                delta = abs((visit_moment - target).total_seconds())
+                if delta > max_gap_minutes * 60:
+                    continue
+                try:
+                    center = (
+                        float(visit["latitude"]),
+                        float(visit["longitude"]),
+                    )
+                except (KeyError, TypeError, ValueError):
+                    continue
+                point = coordinates[-1] if attribute == "start" else coordinates[0]
+                if not 2 < _distance_m((point[0], point[1]), center) <= max_distance_m:
+                    continue
+                if best_delta is None or delta < best_delta:
+                    best = (visit, center)
+                    best_delta = delta
+            return best
+
+        if end is not None:
+            match = best_match(end, "start")
+            if match is not None:
+                visit, center = match
+                coordinates.append([round(center[0], 5), round(center[1], 5)])
+                if times:
+                    times.append(
+                        str(visit.get("start") or route.get("end") or "")
+                    )
+        if start is not None:
+            match = best_match(start, "end")
+            if match is not None:
+                visit, center = match
+                coordinates.insert(
+                    0, [round(center[0], 5), round(center[1], 5)]
                 )
-            except (KeyError, TypeError, ValueError):
-                continue
-            if (
-                end is not None
-                and visit_start is not None
-                and abs((visit_start - end).total_seconds())
-                <= max_gap_minutes * 60
-            ):
-                last = coordinates[-1]
-                distance = _distance_m((last[0], last[1]), center)
-                if 2 < distance <= max_distance_m:
-                    coordinates.append(
-                        [round(center[0], 5), round(center[1], 5)]
+                if times:
+                    times.insert(
+                        0, str(visit.get("end") or route.get("start") or "")
                     )
-                    if times:
-                        times.append(str(visit.get("start") or route.get("end") or ""))
-            if (
-                start is not None
-                and visit_end is not None
-                and abs((start - visit_end).total_seconds())
-                <= max_gap_minutes * 60
-            ):
-                first = coordinates[0]
-                distance = _distance_m((first[0], first[1]), center)
-                if 2 < distance <= max_distance_m:
-                    coordinates.insert(
-                        0, [round(center[0], 5), round(center[1], 5)]
-                    )
-                    if times:
-                        times.insert(
-                            0, str(visit.get("end") or route.get("start") or "")
-                        )
         route["coordinates"] = coordinates
         if times:
             route["times"] = times

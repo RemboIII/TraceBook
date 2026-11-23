@@ -2,7 +2,7 @@
  * A Google Timeline-style day view backed by the local GeoPulse archive.
  */
 
-const CARD_VERSION = "0.2.0";
+const CARD_VERSION = "0.2.1";
 
 //: Text search in the visit editor only looks this far from the visit.
 const MAX_PLACE_SEARCH_METERS = 250;

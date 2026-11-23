@@ -1,6 +1,6 @@
 # GeoPulse
 
-> **Version 0.2.0.**
+> **Version 0.2.1.**
 
 A Google Timeline-style day view for Home Assistant with a local SQLite
 archive. Day timeline, map, calendar, editable visits and trips, place search,
