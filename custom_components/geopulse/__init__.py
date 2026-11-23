@@ -47,7 +47,7 @@ from .websocket_local import async_register_local_websocket_api
 
 _LOGGER = logging.getLogger(__name__)
 
-VERSION = "0.2.1"
+VERSION = "0.2.2"
 
 STATIC_URL = "/geopulse_static"
 CARD_URL = f"{STATIC_URL}/geopulse-card.js?v={VERSION}"
