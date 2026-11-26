@@ -34,7 +34,7 @@ jobs:
             NOTES="$(git log -1 --format=%B "${SHA}")"
           fi
           if [ -z "${NOTES}" ]; then
-            NOTES="GeoPulse ${VERSION}"
+            NOTES="TraceBook ${VERSION}"
           fi
           if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
             gh release delete "${GITHUB_REF_NAME}" -y
