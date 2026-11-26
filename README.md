@@ -1,6 +1,6 @@
 # TraceBook
 
-> **Version 0.2.3.**
+> **Version 0.3.0.**
 
 A Google Timeline-style day view for Home Assistant, built on a local SQLite
 archive. TraceBook stores every location report from your device trackers
@@ -44,6 +44,19 @@ need a separate Lovelace resource.
 
 Copy `custom_components/tracebook` to your Home Assistant `config` directory and
 restart. The card and Leaflet are served from `/tracebook_static/`.
+
+### Upgrading from 0.2.x
+
+The integration domain changed from `geopulse` to `tracebook`, so the
+Marketplace cannot update an existing installation in place:
+
+1. Note the settings under **Settings → Devices & services** and remove the old
+   GeoPulse entry.
+2. Uninstall the old entry in the Marketplace, then add
+   `https://github.com/RemboIII/TraceBook` again and install TraceBook.
+3. Add the TraceBook integration and select the same trackers. The archive in
+   `HA_timeline/archive.db`, its edited visits and exported files are kept.
+4. Change `custom:geopulse-card` to `custom:tracebook-card` in your dashboard.
 
 ## Configuration
 

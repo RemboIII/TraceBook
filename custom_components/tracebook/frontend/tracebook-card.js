@@ -2,7 +2,7 @@
  * A Google Timeline-style day view backed by the local TraceBook archive.
  */
 
-const CARD_VERSION = "0.2.2";
+const CARD_VERSION = "0.3.0";
 
 //: Text search in the visit editor only looks this far from the visit.
 const MAX_PLACE_SEARCH_METERS = 250;
