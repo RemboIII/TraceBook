@@ -1,9 +1,9 @@
-# GeoPulse
+# TraceBook
 
 > **Version 0.2.2.**
 
 A Google Timeline-style day view for Home Assistant, built on a local SQLite
-archive. GeoPulse stores every location report from your device trackers
+archive. TraceBook stores every location report from your device trackers
 independently of the recorder retention, so years of history stay available
 without an external location service.
 
@@ -31,9 +31,9 @@ without an external location service.
 
 1. Open **Marketplace** in Home Assistant.
 2. Choose **Add via GitHub link**.
-3. Enter `https://github.com/RemboIII/geopulse`.
-4. Install **GeoPulse** and restart Home Assistant.
-5. Go to **Settings → Devices & services → Add integration → GeoPulse**.
+3. Enter `https://github.com/RemboIII/TraceBook`.
+4. Install **TraceBook** and restart Home Assistant.
+5. Go to **Settings → Devices & services → Add integration → TraceBook**.
 
 On older installations this is the HACS **Custom repositories** flow.
 
