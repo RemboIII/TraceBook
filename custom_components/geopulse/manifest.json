@@ -1,6 +1,6 @@
 {
   "domain": "geopulse",
-  "name": "GeoPulse",
+  "name": "TraceBook",
   "codeowners": [
     "@RemboIII"
   ],
@@ -11,10 +11,10 @@
     "websocket_api",
     "recorder"
   ],
-  "documentation": "https://github.com/RemboIII/geopulse",
+  "documentation": "https://github.com/RemboIII/TraceBook",
   "integration_type": "service",
   "iot_class": "local_push",
-  "issue_tracker": "https://github.com/RemboIII/geopulse/issues",
+  "issue_tracker": "https://github.com/RemboIII/TraceBook/issues",
   "requirements": [],
   "single_config_entry": true,
   "version": "0.2.2"
