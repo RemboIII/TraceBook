@@ -1,6 +1,6 @@
 # TraceBook
 
-> **Version 0.2.2.**
+> **Version 0.2.3.**
 
 A Google Timeline-style day view for Home Assistant, built on a local SQLite
 archive. TraceBook stores every location report from your device trackers
