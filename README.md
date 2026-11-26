@@ -42,8 +42,8 @@ need a separate Lovelace resource.
 
 ### Manual
 
-Copy `custom_components/geopulse` to your Home Assistant `config` directory and
-restart. The card and Leaflet are served from `/geopulse_static/`.
+Copy `custom_components/tracebook` to your Home Assistant `config` directory and
+restart. The card and Leaflet are served from `/tracebook_static/`.
 
 ## Configuration
 
@@ -61,7 +61,7 @@ restart.
 `configuration.yaml` is still supported for existing installations:
 
 ```yaml
-geopulse:
+tracebook:
   # Optional: restrict access to specific Home Assistant user ids.
   # allowed_user_ids:
   #   - <your-user-id>
@@ -86,7 +86,7 @@ precedence.
 ## Dashboard card
 
 ```yaml
-type: custom:geopulse-card
+type: custom:tracebook-card
 title: Timeline
 person_name: Alex
 source: local
@@ -96,7 +96,7 @@ entity_id: device_tracker.alex_phone
 Family member from the archive (administrators only):
 
 ```yaml
-type: custom:geopulse-card
+type: custom:tracebook-card
 title: Timeline Sam
 person_name: Sam
 source: local
@@ -106,7 +106,7 @@ entity_id: device_tracker.sam_phone
 Recorder-only family member (read-only):
 
 ```yaml
-type: custom:geopulse-card
+type: custom:tracebook-card
 person_name: Robin
 source: ha_history
 entity_id: device_tracker.robin_phone

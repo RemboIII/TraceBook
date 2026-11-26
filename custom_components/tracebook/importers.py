@@ -1,6 +1,6 @@
 """Import location history from GPX, GeoJSON and Google Timeline exports.
 
-The archive is the only location store GeoPulse uses, so there is no API
+The archive is the only location store TraceBook uses, so there is no API
 coupling with other services.  Historical data is imported from files instead:
 
 * GPX (track points, route points and waypoints with a timestamp)

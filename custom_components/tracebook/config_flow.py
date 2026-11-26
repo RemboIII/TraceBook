@@ -1,4 +1,4 @@
-"""Config and options flow for GeoPulse."""
+"""Config and options flow for TraceBook."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ def _people(
     entity_ids: list[str],
     existing: dict[str, dict[str, Any]],
 ) -> list[dict[str, str]]:
-    """Turn selected entity ids into GeoPulse tracker records."""
+    """Turn selected entity ids into TraceBook tracker records."""
     result: list[dict[str, str]] = []
     used: set[str] = set()
 
@@ -135,8 +135,8 @@ def _build_data(
     }
 
 
-class GeoPulseConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Set up GeoPulse from the Home Assistant UI."""
+class TraceBookConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    """Set up TraceBook from the Home Assistant UI."""
 
     VERSION = 1
 
@@ -160,7 +160,7 @@ class GeoPulseConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "unknown_entity"
             else:
                 data = _build_data(self.hass, {}, user_input)
-                return self.async_create_entry(title="GeoPulse", data=data)
+                return self.async_create_entry(title="TraceBook", data=data)
 
         return self.async_show_form(
             step_id="user",
@@ -171,10 +171,10 @@ class GeoPulseConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
-        return GeoPulseOptionsFlow()
+        return TraceBookOptionsFlow()
 
 
-class GeoPulseOptionsFlow(config_entries.OptionsFlow):
+class TraceBookOptionsFlow(config_entries.OptionsFlow):
     """Edit the trackers and archive settings of an existing entry."""
 
     async def async_step_init(

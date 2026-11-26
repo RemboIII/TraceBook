@@ -32,7 +32,7 @@ _LOGGER = logging.getLogger(__name__)
 
 PHOTON_URL = "https://photon.komoot.io/api/"
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
-USER_AGENT = "GeoPulse/1.7 (Home Assistant)"
+USER_AGENT = "TraceBook/1.7 (Home Assistant)"
 NOMINATIM_MIN_INTERVAL = 1.1
 PHOTON_TIMEOUT = 4
 PHOTON_DOWN_SECONDS = 600

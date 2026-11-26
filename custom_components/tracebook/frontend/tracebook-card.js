@@ -1,5 +1,5 @@
-/* GeoPulse card for Home Assistant
- * A Google Timeline-style day view backed by the local GeoPulse archive.
+/* TraceBook card for Home Assistant
+ * A Google Timeline-style day view backed by the local TraceBook archive.
  */
 
 const CARD_VERSION = "0.2.2";
@@ -639,7 +639,7 @@ function isTextInput(element) {
 /* Card                                                                */
 /* ------------------------------------------------------------------ */
 
-class GeoPulseCard extends HTMLElement {
+class TraceBookCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
@@ -755,7 +755,7 @@ class GeoPulseCard extends HTMLElement {
     this._loadLeaflet()
       .then(() => this._initMap())
       .catch((err) => {
-        console.error("GeoPulse: Leaflet laden mislukt", err);
+        console.error("TraceBook: Leaflet laden mislukt", err);
         this._toast("Kaart kon niet worden geladen", "error");
       });
     this._loadDay();
@@ -937,7 +937,7 @@ class GeoPulseCard extends HTMLElement {
     if (persist) {
       try {
         localStorage.setItem(
-          "geopulse:split",
+          "tracebook:split",
           String(clamped / mainH)
         );
       } catch {
@@ -957,7 +957,7 @@ class GeoPulseCard extends HTMLElement {
 
     let ratio = null;
     try {
-      const stored = Number(localStorage.getItem("geopulse:split"));
+      const stored = Number(localStorage.getItem("tracebook:split"));
       if (Number.isFinite(stored) && stored > 0) ratio = stored;
     } catch {
       /* geen opslag beschikbaar */
@@ -1131,7 +1131,7 @@ class GeoPulseCard extends HTMLElement {
         throw new Error("Dit is geen .vcf-bestand");
       }
       const response = await this._hass.fetchWithAuth(
-        "/api/geopulse/contacts",
+        "/api/tracebook/contacts",
         {
           method: "POST",
           headers: { "Content-Type": "text/vcard; charset=utf-8" },
@@ -1150,7 +1150,7 @@ class GeoPulseCard extends HTMLElement {
         `${count} adres${count === 1 ? "" : "sen"} uit het adresboek geïmporteerd`
       );
     } catch (err) {
-      console.error("GeoPulse: contacten importeren mislukt", err);
+      console.error("TraceBook: contacten importeren mislukt", err);
       if (status) status.textContent = "Mislukt";
       this._toast(err?.message || "Contacten importeren mislukt", "error");
     } finally {
@@ -1202,7 +1202,7 @@ class GeoPulseCard extends HTMLElement {
           ? file
           : file.slice(index * chunkSize, (index + 1) * chunkSize);
         const response = await this._hass.fetchWithAuth(
-          `/api/geopulse/import/${encodeURIComponent(entity)}` +
+          `/api/tracebook/import/${encodeURIComponent(entity)}` +
             `?name=${encodeURIComponent(file.name)}&size=${file.size}` +
             (chunks > 1
               ? `&upload_id=${uploadId}&chunk=${index}&chunks=${chunks}`
@@ -1240,7 +1240,7 @@ class GeoPulseCard extends HTMLElement {
       this._placesPromise = null;
       await this._loadDay();
     } catch (err) {
-      console.error("GeoPulse: historie importeren mislukt", err);
+      console.error("TraceBook: historie importeren mislukt", err);
       if (status) status.textContent = "Mislukt";
       this._toast(err?.message || "Importeren mislukt", "error");
     } finally {
@@ -1411,12 +1411,12 @@ class GeoPulseCard extends HTMLElement {
     try {
       const request = this._isFamilySource()
         ? {
-            type: "geopulse/ha_day",
+            type: "tracebook/ha_day",
             date: this._date,
             entity_id: this._config.entity_id,
           }
         : {
-            type: "geopulse/local_day",
+            type: "tracebook/local_day",
             date: this._date,
             entity_id: this._localEntity(),
           };
@@ -1427,7 +1427,7 @@ class GeoPulseCard extends HTMLElement {
       this._renderMap();
     } catch (err) {
       if (token !== this._loadToken) return;
-      console.error("GeoPulse: dag laden mislukt", err);
+      console.error("TraceBook: dag laden mislukt", err);
       this._error =
         err?.message || "Kon de gegevens van deze dag niet ophalen.";
       this._data = null;
@@ -1567,13 +1567,13 @@ class GeoPulseCard extends HTMLElement {
     try {
       const request = this._isFamilySource()
         ? {
-            type: "geopulse/ha_month",
+            type: "tracebook/ha_month",
             year,
             month: month + 1,
             entity_id: this._config.entity_id,
           }
         : {
-            type: "geopulse/local_month",
+            type: "tracebook/local_month",
             year,
             month: month + 1,
             entity_id: this._localEntity(),
@@ -1583,7 +1583,7 @@ class GeoPulseCard extends HTMLElement {
       this._monthDays = result.days || {};
       this._renderCalendar();
     } catch (err) {
-      console.warn("GeoPulse: maandgegevens laden mislukt", err);
+      console.warn("TraceBook: maandgegevens laden mislukt", err);
     }
   }
 
@@ -1750,7 +1750,7 @@ class GeoPulseCard extends HTMLElement {
     try {
       const result = await Promise.race([
         this._hass.callWS({
-          type: "geopulse/places_search",
+          type: "tracebook/places_search",
           query,
           entity_id: this._localEntity(),
           radius: 75,
@@ -1766,7 +1766,7 @@ class GeoPulseCard extends HTMLElement {
       this._placesSearch.loading = false;
       this._renderPlacesSearch();
     } catch (err) {
-      console.error("GeoPulse: plaatsen zoeken mislukt", err);
+      console.error("TraceBook: plaatsen zoeken mislukt", err);
       this._placesSearch.loading = false;
       this._placesSearch.error =
         err?.message || "Zoeken mislukt. Probeer het opnieuw.";
@@ -1789,7 +1789,7 @@ class GeoPulseCard extends HTMLElement {
     if (!item) return;
     try {
       await this._hass.callWS({
-        type: "geopulse/local_save_place",
+        type: "tracebook/local_save_place",
         name: item.name,
         lat: Number(item.lat),
         lon: Number(item.lon),
@@ -1804,7 +1804,7 @@ class GeoPulseCard extends HTMLElement {
       this._toast("Plek bewaard");
       this._renderPlacesSearch();
     } catch (err) {
-      console.error("GeoPulse: plek bewaren mislukt", err);
+      console.error("TraceBook: plek bewaren mislukt", err);
       this._toast(err?.message || "Bewaren mislukt", "error");
     }
   }
@@ -1832,7 +1832,7 @@ class GeoPulseCard extends HTMLElement {
 
     try {
       const entity = encodeURIComponent(this._localEntity());
-      const url = `/api/geopulse/export/${entity}/${format}?start=${encodeURIComponent(
+      const url = `/api/tracebook/export/${entity}/${format}?start=${encodeURIComponent(
         start
       )}&end=${encodeURIComponent(end)}`;
       const anchor = document.createElement("a");
@@ -1843,7 +1843,7 @@ class GeoPulseCard extends HTMLElement {
       anchor.remove();
       this._toast("Export gestart — het bestand wordt gedownload");
     } catch (err) {
-      console.error("GeoPulse: exporteren mislukt", err);
+      console.error("TraceBook: exporteren mislukt", err);
       this._toast(err?.message || "Exporteren mislukt", "error");
     }
   }
@@ -2227,13 +2227,13 @@ class GeoPulseCard extends HTMLElement {
       this._ensureLeafletCss();
       return Promise.resolve(this._L);
     }
-    if (window.__geopulseLeaflet) {
-      this._L = window.__geopulseLeaflet;
+    if (window.__tracebookLeaflet) {
+      this._L = window.__tracebookLeaflet;
       this._ensureLeafletCss();
       return Promise.resolve(this._L);
     }
-    if (window.__geopulseLeafletPromise) {
-      return window.__geopulseLeafletPromise.then((L) => {
+    if (window.__tracebookLeafletPromise) {
+      return window.__tracebookLeafletPromise.then((L) => {
         this._L = L;
         this._ensureLeafletCss();
         return L;
@@ -2248,11 +2248,11 @@ class GeoPulseCard extends HTMLElement {
       // (mixed versions broke clipping and the drag handler).
       const previous = window.L;
       const script = document.createElement("script");
-      script.src = "/geopulse_static/leaflet.js";
+      script.src = "/tracebook_static/leaflet.js";
       script.async = true;
       script.onload = () => {
         const ours = window.L;
-        window.__geopulseLeaflet = ours;
+        window.__tracebookLeaflet = ours;
         if (previous) {
           window.L = previous;
         } else {
@@ -2270,7 +2270,7 @@ class GeoPulseCard extends HTMLElement {
       };
       document.head.appendChild(script);
     });
-    window.__geopulseLeafletPromise = this._leafletPromise;
+    window.__tracebookLeafletPromise = this._leafletPromise;
     return this._leafletPromise;
   }
 
@@ -2278,7 +2278,7 @@ class GeoPulseCard extends HTMLElement {
     if (this.shadowRoot.querySelector("link[data-leaflet-css]")) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "/geopulse_static/leaflet.css";
+    link.href = "/tracebook_static/leaflet.css";
     link.dataset.leafletCss = "true";
     this.shadowRoot.prepend(link);
   }
@@ -2367,7 +2367,7 @@ class GeoPulseCard extends HTMLElement {
       return this._map;
     })();
     this._mapInitPromise = this._mapInitPromise.catch((err) => {
-      console.error("GeoPulse: kaart initialiseren mislukt", err);
+      console.error("TraceBook: kaart initialiseren mislukt", err);
       this._mapInitPromise = null;
       this._leafletPromise = null;
       return null;
@@ -2417,7 +2417,7 @@ class GeoPulseCard extends HTMLElement {
   _mapStyle() {
     if (this._config.tile_url) return "custom";
     try {
-      const saved = localStorage.getItem("geopulse:layer");
+      const saved = localStorage.getItem("tracebook:layer");
       if (saved === "night") return "night";
     } catch {
       /* private mode */
@@ -2516,7 +2516,7 @@ class GeoPulseCard extends HTMLElement {
     }
     const next = this._mapStyle() === "night" ? "day" : "night";
     try {
-      localStorage.setItem("geopulse:layer", next);
+      localStorage.setItem("tracebook:layer", next);
     } catch {
       /* private mode */
     }
@@ -2969,7 +2969,7 @@ class GeoPulseCard extends HTMLElement {
           });
           return;
         } catch (err) {
-          console.warn("GeoPulse: fitBounds mislukt", err);
+          console.warn("TraceBook: fitBounds mislukt", err);
         }
       }
     }
@@ -3084,7 +3084,7 @@ class GeoPulseCard extends HTMLElement {
     button.innerHTML = '<span class="dt-btnspinner"></span>Bezig…';
     try {
       await this._hass.callWS({
-        type: "geopulse/local_update_visit",
+        type: "tracebook/local_update_visit",
         date: this._date,
         entity_id: this._localEntity(),
         visit_id: String(visitId),
@@ -3093,7 +3093,7 @@ class GeoPulseCard extends HTMLElement {
       this._toast("Bezoek bevestigd");
       await this._loadDay();
     } catch (err) {
-      console.error("GeoPulse: bevestigen mislukt", err);
+      console.error("TraceBook: bevestigen mislukt", err);
       this._toast(err?.message || "Bevestigen mislukt", "error");
       button.disabled = false;
       button.innerHTML = original;
@@ -3187,7 +3187,7 @@ class GeoPulseCard extends HTMLElement {
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return [];
     try {
       const result = await this._hass.callWS({
-        type: "geopulse/places_near",
+        type: "tracebook/places_near",
         entity_id: this._localEntity(),
         lat: latitude,
         lon: longitude,
@@ -3196,7 +3196,7 @@ class GeoPulseCard extends HTMLElement {
       });
       return result.results || [];
     } catch (err) {
-      console.warn("GeoPulse: plekken in de buurt laden mislukt", err);
+      console.warn("TraceBook: plekken in de buurt laden mislukt", err);
       return [];
     }
   }
@@ -3257,7 +3257,7 @@ class GeoPulseCard extends HTMLElement {
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
     try {
       const result = await this._hass.callWS({
-        type: "geopulse/contacts_near",
+        type: "tracebook/contacts_near",
         lat: latitude,
         lon: longitude,
         radius: 150,
@@ -3285,7 +3285,7 @@ class GeoPulseCard extends HTMLElement {
       }
       if (added) this._renderComboList();
     } catch (err) {
-      console.warn("GeoPulse: contacten laden mislukt", err);
+      console.warn("TraceBook: contacten laden mislukt", err);
     }
   }
 
@@ -3387,7 +3387,7 @@ class GeoPulseCard extends HTMLElement {
     try {
       const result = await Promise.race([
         this._hass.callWS({
-          type: "geopulse/places_lookup",
+          type: "tracebook/places_lookup",
           query,
           lat: Number(visit.latitude),
           lon: Number(visit.longitude),
@@ -3438,7 +3438,7 @@ class GeoPulseCard extends HTMLElement {
       edit.osmLoading = false;
       this._renderComboList();
     } catch (err) {
-      console.warn("GeoPulse: OSM-zoeken in dropdown mislukt", err);
+      console.warn("TraceBook: OSM-zoeken in dropdown mislukt", err);
       edit.osmLoading = false;
       this._renderComboList();
     }
@@ -3463,7 +3463,7 @@ class GeoPulseCard extends HTMLElement {
       }
     }
     const result = await this._hass.callWS({
-      type: "geopulse/local_save_place",
+      type: "tracebook/local_save_place",
       name: place.name,
       lat: Number(place.latitude),
       lon: Number(place.longitude),
@@ -3485,7 +3485,7 @@ class GeoPulseCard extends HTMLElement {
     if (!this._hass) return [];
 
     this._placesPromise = this._hass
-      .callWS({ type: "geopulse/local_places" })
+      .callWS({ type: "tracebook/local_places" })
       .then((result) => {
         const places = result.places || [];
         this._places = places.map((place) => ({
@@ -3498,7 +3498,7 @@ class GeoPulseCard extends HTMLElement {
         return this._places;
       })
       .catch((err) => {
-        console.error("GeoPulse: plekken laden mislukt", err);
+        console.error("TraceBook: plekken laden mislukt", err);
         this._places = [];
         return [];
       })
@@ -3752,7 +3752,7 @@ class GeoPulseCard extends HTMLElement {
       try {
         selectedId = await this._ensureSelectedPlaceSaved();
       } catch (err) {
-        console.warn("GeoPulse: plek bewaren mislukt", err);
+        console.warn("TraceBook: plek bewaren mislukt", err);
       }
     }
     if (
@@ -3782,7 +3782,7 @@ class GeoPulseCard extends HTMLElement {
 
     try {
       await this._hass.callWS({
-        type: "geopulse/local_update_visit",
+        type: "tracebook/local_update_visit",
         date: this._date,
         entity_id: this._localEntity(),
         visit_id: String(visit.visit_id),
@@ -3792,7 +3792,7 @@ class GeoPulseCard extends HTMLElement {
       this._toast("Bezoek bijgewerkt en bevestigd");
       await this._loadDay();
     } catch (err) {
-      console.error("GeoPulse: bezoek opslaan mislukt", err);
+      console.error("TraceBook: bezoek opslaan mislukt", err);
       this._toast(err?.message || "Opslaan mislukt", "error");
       edit.saving = false;
       if (saveButton) {
@@ -3824,7 +3824,7 @@ class GeoPulseCard extends HTMLElement {
 
     try {
       await this._hass.callWS({
-        type: "geopulse/local_delete_visit",
+        type: "tracebook/local_delete_visit",
         date: this._date,
         entity_id: this._localEntity(),
         visit_id: String(edit.visit.visit_id),
@@ -3833,7 +3833,7 @@ class GeoPulseCard extends HTMLElement {
       this._toast("Bezoek verwijderd");
       await this._loadDay();
     } catch (err) {
-      console.error("GeoPulse: bezoek verwijderen mislukt", err);
+      console.error("TraceBook: bezoek verwijderen mislukt", err);
       this._toast(err?.message || "Verwijderen mislukt", "error");
       edit.saving = false;
       if (button) {
@@ -4087,7 +4087,7 @@ class GeoPulseCard extends HTMLElement {
 
     try {
       await this._hass.callWS({
-        type: "geopulse/local_update_journey",
+        type: "tracebook/local_update_journey",
         date: this._date,
         entity_id: this._localEntity(),
         track_key: String(edit.entry.key),
@@ -4098,7 +4098,7 @@ class GeoPulseCard extends HTMLElement {
       this._toast("Reis bijgewerkt");
       await this._loadDay();
     } catch (err) {
-      console.error("GeoPulse: reis opslaan mislukt", err);
+      console.error("TraceBook: reis opslaan mislukt", err);
       this._toast(err?.message || "Opslaan mislukt", "error");
       edit.saving = false;
       if (button) {
@@ -4146,7 +4146,7 @@ class GeoPulseCard extends HTMLElement {
     }
     try {
       await this._hass.callWS({
-        type: "geopulse/local_move_journey_part",
+        type: "tracebook/local_move_journey_part",
         date: this._date,
         entity_id: this._localEntity(),
         track_key: String(edit.entry.key),
@@ -4158,7 +4158,7 @@ class GeoPulseCard extends HTMLElement {
       this._toast("Deel verplaatst");
       await this._loadDay();
     } catch (err) {
-      console.error("GeoPulse: routedeel verplaatsen mislukt", err);
+      console.error("TraceBook: routedeel verplaatsen mislukt", err);
       this._toast(err?.message || "Verplaatsen mislukt", "error");
       edit.saving = false;
       if (button) {
@@ -4180,7 +4180,7 @@ class GeoPulseCard extends HTMLElement {
     ];
     try {
       await this._hass.callWS({
-        type: "geopulse/local_merge_journeys",
+        type: "tracebook/local_merge_journeys",
         date: this._date,
         entity_id: this._localEntity(),
         keys: [String(previous.key), String(entry.key)],
@@ -4188,7 +4188,7 @@ class GeoPulseCard extends HTMLElement {
       this._toast("Reizen samengevoegd");
       await this._loadDay();
     } catch (err) {
-      console.error("GeoPulse: samenvoegen mislukt", err);
+      console.error("TraceBook: samenvoegen mislukt", err);
       this._toast(err?.message || "Samenvoegen mislukt", "error");
     }
   }
@@ -4206,7 +4206,7 @@ class GeoPulseCard extends HTMLElement {
     }
     try {
       await this._hass.callWS({
-        type: "geopulse/local_reset_day",
+        type: "tracebook/local_reset_day",
         date: this._date,
         entity_id: this._localEntity(),
       });
@@ -4214,7 +4214,7 @@ class GeoPulseCard extends HTMLElement {
       this._toast("Dag opnieuw opgebouwd");
       await this._loadDay();
     } catch (err) {
-      console.error("GeoPulse: dag herberekenen mislukt", err);
+      console.error("TraceBook: dag herberekenen mislukt", err);
       this._toast(err?.message || "Herberekenen mislukt", "error");
     }
   }
@@ -5595,20 +5595,20 @@ class GeoPulseCard extends HTMLElement {
   }
 }
 
-if (!customElements.get("geopulse-card")) {
-  customElements.define("geopulse-card", GeoPulseCard);
+if (!customElements.get("tracebook-card")) {
+  customElements.define("tracebook-card", TraceBookCard);
 }
 
 console.info(
-  `%c GEOPULSE %c ${CARD_VERSION} `,
+  `%c TRACEBOOK %c ${CARD_VERSION} `,
   "color:white;background:#0ea5e9;font-weight:700;border-radius:4px 0 0 4px;padding:2px 6px",
   "color:#0ea5e9;background:#e0f2fe;font-weight:700;border-radius:0 4px 4px 0;padding:2px 6px"
 );
 
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: "geopulse-card",
-  name: "GeoPulse",
+  type: "tracebook-card",
+  name: "TraceBook",
   description: "Google Timeline-achtige dagweergave met kaart, ritten en bezoeken.",
   preview: false,
 });

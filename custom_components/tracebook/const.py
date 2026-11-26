@@ -1,6 +1,6 @@
-"""Constants for the GeoPulse integration."""
+"""Constants for the TraceBook integration."""
 
-DOMAIN = "geopulse"
+DOMAIN = "tracebook"
 
 CONF_ALLOWED_USER_IDS = "allowed_user_ids"
 CONF_FAMILY = "family"

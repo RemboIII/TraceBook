@@ -85,7 +85,7 @@ async def _mutable_day(
     return await local_history.get_local_day(hass, archive, entity_id, day)
 
 
-@websocket_api.websocket_command({vol.Required("type"): "geopulse/archive_status"})
+@websocket_api.websocket_command({vol.Required("type"): "tracebook/archive_status"})
 @websocket_api.async_response
 async def websocket_archive_status(hass: HomeAssistant, connection, msg: dict) -> None:
     if not _authorized(hass, connection):
@@ -113,7 +113,7 @@ async def websocket_archive_status(hass: HomeAssistant, connection, msg: dict) -
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "geopulse/local_day",
+        vol.Required("type"): "tracebook/local_day",
         vol.Required("date"): str,
         vol.Required("entity_id"): cv.entity_id,
     }
@@ -204,7 +204,7 @@ async def websocket_local_day(hass: HomeAssistant, connection, msg: dict) -> Non
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "geopulse/local_month",
+        vol.Required("type"): "tracebook/local_month",
         vol.Required("year"): vol.All(int, vol.Range(min=2000, max=2100)),
         vol.Required("month"): vol.All(int, vol.Range(min=1, max=12)),
         vol.Required("entity_id"): cv.entity_id,
@@ -232,7 +232,7 @@ async def websocket_local_month(hass: HomeAssistant, connection, msg: dict) -> N
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "geopulse/local_update_visit",
+        vol.Required("type"): "tracebook/local_update_visit",
         vol.Required("date"): str,
         vol.Required("entity_id"): cv.entity_id,
         vol.Required("visit_id"): str,
@@ -275,7 +275,7 @@ async def websocket_local_update_visit(hass: HomeAssistant, connection, msg: dic
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "geopulse/local_delete_visit",
+        vol.Required("type"): "tracebook/local_delete_visit",
         vol.Required("date"): str,
         vol.Required("entity_id"): cv.entity_id,
         vol.Required("visit_id"): str,
@@ -300,7 +300,7 @@ async def websocket_local_delete_visit(hass: HomeAssistant, connection, msg: dic
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "geopulse/local_merge_visits",
+        vol.Required("type"): "tracebook/local_merge_visits",
         vol.Required("date"): str,
         vol.Required("entity_id"): cv.entity_id,
         vol.Required("visit_ids"): vol.All(cv.ensure_list, [str]),
@@ -326,7 +326,7 @@ async def websocket_local_merge_visits(hass: HomeAssistant, connection, msg: dic
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "geopulse/local_update_journey",
+        vol.Required("type"): "tracebook/local_update_journey",
         vol.Required("date"): str,
         vol.Required("entity_id"): cv.entity_id,
         vol.Required("track_key"): str,
@@ -359,7 +359,7 @@ async def websocket_local_update_journey(hass: HomeAssistant, connection, msg: d
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "geopulse/local_move_journey_part",
+        vol.Required("type"): "tracebook/local_move_journey_part",
         vol.Required("date"): str,
         vol.Required("entity_id"): cv.entity_id,
         vol.Required("track_key"): str,
@@ -403,7 +403,7 @@ async def websocket_local_move_journey_part(
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "geopulse/local_merge_journeys",
+        vol.Required("type"): "tracebook/local_merge_journeys",
         vol.Required("date"): str,
         vol.Required("entity_id"): cv.entity_id,
         vol.Required("keys"): vol.All(cv.ensure_list, [str]),
@@ -429,7 +429,7 @@ async def websocket_local_merge_journeys(hass: HomeAssistant, connection, msg: d
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "geopulse/local_reset_day",
+        vol.Required("type"): "tracebook/local_reset_day",
         vol.Required("date"): str,
         vol.Required("entity_id"): cv.entity_id,
     }
@@ -452,7 +452,7 @@ async def websocket_local_reset_day(hass: HomeAssistant, connection, msg: dict) 
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "geopulse/local_places",
+        vol.Required("type"): "tracebook/local_places",
         vol.Optional("query"): str,
     }
 )
@@ -471,7 +471,7 @@ async def websocket_local_places(hass: HomeAssistant, connection, msg: dict) -> 
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "geopulse/local_save_place",
+        vol.Required("type"): "tracebook/local_save_place",
         vol.Required("name"): str,
         vol.Required("lat"): vol.Coerce(float),
         vol.Required("lon"): vol.Coerce(float),
@@ -523,7 +523,7 @@ async def websocket_local_save_place(hass: HomeAssistant, connection, msg: dict)
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "geopulse/places_search",
+        vol.Required("type"): "tracebook/places_search",
         vol.Required("query"): str,
         vol.Required("entity_id"): cv.entity_id,
         vol.Optional("radius", default=75): vol.All(
@@ -650,7 +650,7 @@ async def websocket_places_search(hass: HomeAssistant, connection, msg: dict) ->
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "geopulse/places_near",
+        vol.Required("type"): "tracebook/places_near",
         vol.Required("entity_id"): cv.entity_id,
         vol.Required("lat"): vol.Coerce(float),
         vol.Required("lon"): vol.Coerce(float),
@@ -688,7 +688,7 @@ async def websocket_places_near(
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "geopulse/places_lookup",
+        vol.Required("type"): "tracebook/places_lookup",
         vol.Required("query"): str,
         vol.Optional("lat"): vol.Coerce(float),
         vol.Optional("lon"): vol.Coerce(float),
@@ -780,7 +780,7 @@ async def websocket_places_lookup(
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "geopulse/contacts_near",
+        vol.Required("type"): "tracebook/contacts_near",
         vol.Required("lat"): vol.Coerce(float),
         vol.Required("lon"): vol.Coerce(float),
         vol.Optional("radius", default=150): vol.All(
@@ -808,7 +808,7 @@ async def websocket_contacts_near(
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "geopulse/local_export",
+        vol.Required("type"): "tracebook/local_export",
         vol.Required("entity_id"): cv.entity_id,
         vol.Required("start"): str,
         vol.Required("end"): str,
@@ -877,7 +877,7 @@ def _iso_utc(ts: float) -> str:
 def _gpx(rows: list[dict[str, Any]], name: str) -> str:
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
-        '<gpx version="1.1" creator="GeoPulse" '
+        '<gpx version="1.1" creator="TraceBook" '
         'xmlns="http://www.topografix.com/GPX/1/1">',
         f"<metadata><name>{name}</name></metadata>",
         f"<trk><name>{name}</name><trkseg>",

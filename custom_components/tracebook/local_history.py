@@ -215,7 +215,7 @@ async def build_local_day(
     places = _archive_places(await archive.async_places(limit=500))
     payload = _build_day(hass, entity_id, day, points, places, tz)
     _rekey_day(hass, entity_id, payload)
-    if bool((hass.data.get("geopulse") or {}).get("geocode", True)):
+    if bool((hass.data.get("tracebook") or {}).get("geocode", True)):
         await _async_apply_geocoding(hass, payload)
     await _index_visits(archive, payload)
     return payload

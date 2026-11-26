@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "GeoPulse",
+        "title": "TraceBook",
         "description": "Kies welke apparaten worden gearchiveerd en welke personen alleen voor beheerders zichtbaar zijn. Trackers zijn bewerkbaar en worden volledig gearchiveerd; gezinsleden zijn admin-only maar worden ook gearchiveerd.",
         "data": {
           "trackers": "Trackers",
@@ -29,14 +29,14 @@
       "unknown_entity": "Eén of meer geselecteerde entiteiten bestaan niet meer."
     },
     "abort": {
-      "single_instance_allowed": "GeoPulse is al ingesteld.",
-      "yaml_configured": "GeoPulse is ingesteld via configuration.yaml. Verwijder dat blok voordat je de gebruikersinterface gebruikt."
+      "single_instance_allowed": "TraceBook is al ingesteld.",
+      "yaml_configured": "TraceBook is ingesteld via configuration.yaml. Verwijder dat blok voordat je de gebruikersinterface gebruikt."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "GeoPulse-instellingen",
+        "title": "TraceBook-instellingen",
         "description": "Kies welke apparaten worden gearchiveerd en welke personen alleen voor beheerders zichtbaar zijn. Trackers zijn bewerkbaar en worden volledig gearchiveerd; gezinsleden zijn admin-only maar worden ook gearchiveerd.",
         "data": {
           "trackers": "Trackers",

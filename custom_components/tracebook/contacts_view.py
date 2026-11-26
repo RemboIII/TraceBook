@@ -32,8 +32,8 @@ def _write_file(path: Path, text: str) -> None:
 
 
 class ContactsImportView(HomeAssistantView):
-    url = "/api/geopulse/contacts"
-    name = "api:geopulse:contacts"
+    url = "/api/tracebook/contacts"
+    name = "api:tracebook:contacts"
     requires_auth = True
 
     async def post(self, request: web.Request) -> web.Response:
@@ -97,7 +97,7 @@ class ContactsImportView(HomeAssistantView):
                 home = None
         hass.async_create_background_task(
             async_geocode_pending(hass, archive, home),
-            "geopulse_contacts_geocode",
+            "tracebook_contacts_geocode",
         )
 
         _LOGGER.info("Contacten: %s adressen geïmporteerd via dashboard", addresses)

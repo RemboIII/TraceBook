@@ -1,4 +1,4 @@
-"""Websocket API for GeoPulse.
+"""Websocket API for TraceBook.
 
 The timeline itself is served by ``websocket_local``.  This module holds the
 shared authorization helpers and the recorder-backed commands for the family
@@ -51,7 +51,7 @@ def async_register_websocket_api(hass: HomeAssistant) -> None:
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "geopulse/ha_day",
+        vol.Required("type"): "tracebook/ha_day",
         vol.Required("date"): str,
         vol.Required("entity_id"): str,
     }
@@ -94,7 +94,7 @@ async def websocket_ha_day(hass: HomeAssistant, connection, msg: dict) -> None:
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "geopulse/ha_month",
+        vol.Required("type"): "tracebook/ha_month",
         vol.Required("year"): vol.All(int, vol.Range(min=2000, max=2100)),
         vol.Required("month"): vol.All(int, vol.Range(min=1, max=12)),
         vol.Required("entity_id"): str,

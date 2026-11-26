@@ -32,8 +32,8 @@ def _iso(ts: float) -> str:
 
 
 class TimelineExportView(HomeAssistantView):
-    url = "/api/geopulse/export/{entity_id}/{fmt}"
-    name = "api:geopulse:export"
+    url = "/api/tracebook/export/{entity_id}/{fmt}"
+    name = "api:tracebook:export"
     requires_auth = True
 
     async def get(self, request: web.Request, entity_id: str, fmt: str) -> web.StreamResponse:
@@ -88,7 +88,7 @@ class TimelineExportView(HomeAssistantView):
                 await response.write(
                     (
                         '<?xml version="1.0" encoding="UTF-8"?>\n'
-                        '<gpx version="1.1" creator="GeoPulse" '
+                        '<gpx version="1.1" creator="TraceBook" '
                         'xmlns="http://www.topografix.com/GPX/1/1">\n'
                         f"<metadata><name>{name}</name></metadata>\n"
                         f"<trk><name>{name}</name><trkseg>\n"
