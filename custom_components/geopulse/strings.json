@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "GeoPulse",
+        "title": "TraceBook",
         "description": "Choose which devices are archived and which people are visible to administrators only. Trackers are editable and fully archived; family members are admin-only but are archived too.",
         "data": {
           "trackers": "Trackers",
@@ -29,14 +29,14 @@
       "unknown_entity": "One or more selected entities no longer exist."
     },
     "abort": {
-      "single_instance_allowed": "GeoPulse is already configured.",
-      "yaml_configured": "GeoPulse is configured through configuration.yaml. Remove that block before using the UI."
+      "single_instance_allowed": "TraceBook is already configured.",
+      "yaml_configured": "TraceBook is configured through configuration.yaml. Remove that block before using the UI."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "GeoPulse settings",
+        "title": "TraceBook settings",
         "description": "Choose which devices are archived and which people are visible to administrators only. Trackers are editable and fully archived; family members are admin-only but are archived too.",
         "data": {
           "trackers": "Trackers",

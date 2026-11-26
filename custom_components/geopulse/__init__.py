@@ -1,4 +1,4 @@
-"""GeoPulse: a Google Timeline-style day view for Home Assistant.
+"""TraceBook: a Google Timeline-style day view for Home Assistant.
 
 Everything runs on a local SQLite archive with the location points of the
 configured trackers.  No external location service is needed; only place-name
@@ -39,7 +39,7 @@ from .const import (
 )
 from .contacts_view import ContactsImportView
 from .export_view import TimelineExportView
-from .import_view import GeoPulseImportView, async_cleanup_uploads
+from .import_view import TraceBookImportView, async_cleanup_uploads
 from .importer import backfill_recorder
 from .poi_sync import NIGHTLY_TILES, async_sync_archive_tiles, async_sync_home
 from .websocket import async_register_websocket_api
@@ -143,7 +143,7 @@ async def _async_setup_shared(hass: HomeAssistant) -> None:
         hass.data[f"{DOMAIN}_contacts_view_registered"] = True
 
     if not hass.data.get(f"{DOMAIN}_import_view_registered"):
-        hass.http.register_view(GeoPulseImportView())
+        hass.http.register_view(TraceBookImportView())
         async_cleanup_uploads(hass)
         hass.data[f"{DOMAIN}_import_view_registered"] = True
 
@@ -177,7 +177,7 @@ async def _async_apply(
     trackers = _resolve_trackers(archive_conf, family)
     if not trackers:
         _LOGGER.warning(
-            "GeoPulse: geen trackers geconfigureerd; voeg er minimaal één toe "
+            "TraceBook: geen trackers geconfigureerd; voeg er minimaal één toe "
             "in de integratie-instellingen"
         )
 
@@ -211,7 +211,7 @@ async def _async_apply(
 
     if archive is None:
         _LOGGER.info(
-            "GeoPulse gereed (archief: uit, trackers: %s)", len(trackers)
+            "TraceBook gereed (archief: uit, trackers: %s)", len(trackers)
         )
         return
 
@@ -369,19 +369,19 @@ async def _async_apply(
     )
 
     _LOGGER.info(
-        "GeoPulse gereed (archief: aan, trackers: %s)", len(trackers)
+        "TraceBook gereed (archief: aan, trackers: %s)", len(trackers)
     )
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up GeoPulse from configuration.yaml (legacy mode)."""
+    """Set up TraceBook from configuration.yaml (legacy mode)."""
     conf = config.get(DOMAIN)
     if conf is None:
         return True
 
     if hass.config_entries.async_entries(DOMAIN):
         _LOGGER.warning(
-            "GeoPulse: configuration.yaml wordt genegeerd omdat de integratie "
+            "TraceBook: configuration.yaml wordt genegeerd omdat de integratie "
             "al via de gebruikersinterface is ingesteld"
         )
         return True
@@ -391,10 +391,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry) -> bool:
-    """Set up GeoPulse from a config entry."""
+    """Set up TraceBook from a config entry."""
     if hass.data.get(f"{DOMAIN}_source") == "yaml":
         _LOGGER.warning(
-            "GeoPulse: verwijder het geopulse-blok uit configuration.yaml om "
+            "TraceBook: verwijder het geopulse-blok uit configuration.yaml om "
             "de instellingen uit de gebruikersinterface te gebruiken"
         )
         return True

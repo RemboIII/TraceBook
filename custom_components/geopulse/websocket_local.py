@@ -877,7 +877,7 @@ def _iso_utc(ts: float) -> str:
 def _gpx(rows: list[dict[str, Any]], name: str) -> str:
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
-        '<gpx version="1.1" creator="GeoPulse" '
+        '<gpx version="1.1" creator="TraceBook" '
         'xmlns="http://www.topografix.com/GPX/1/1">',
         f"<metadata><name>{name}</name></metadata>",
         f"<trk><name>{name}</name><trkseg>",

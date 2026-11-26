@@ -1,4 +1,4 @@
-"""Websocket API for GeoPulse.
+"""Websocket API for TraceBook.
 
 The timeline itself is served by ``websocket_local``.  This module holds the
 shared authorization helpers and the recorder-backed commands for the family

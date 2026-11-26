@@ -1,4 +1,4 @@
-"""Constants for the GeoPulse integration."""
+"""Constants for the TraceBook integration."""
 
 DOMAIN = "geopulse"
 

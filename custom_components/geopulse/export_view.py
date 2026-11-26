@@ -88,7 +88,7 @@ class TimelineExportView(HomeAssistantView):
                 await response.write(
                     (
                         '<?xml version="1.0" encoding="UTF-8"?>\n'
-                        '<gpx version="1.1" creator="GeoPulse" '
+                        '<gpx version="1.1" creator="TraceBook" '
                         'xmlns="http://www.topografix.com/GPX/1/1">\n'
                         f"<metadata><name>{name}</name></metadata>\n"
                         f"<trk><name>{name}</name><trkseg>\n"

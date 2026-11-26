@@ -27,7 +27,7 @@ _LOGGER = logging.getLogger(__name__)
 PHOTON_URL = "https://photon.komoot.io/api/"
 NOMINATIM_SEARCH_URL = "https://nominatim.openstreetmap.org/search"
 NOMINATIM_MIN_INTERVAL = 1.1
-USER_AGENT = "GeoPulse/1.7 (Home Assistant)"
+USER_AGENT = "TraceBook/1.7 (Home Assistant)"
 CACHE_TTL_SECONDS = 3600
 # Photon is regularly unreachable from some networks.  Keep its timeout short
 # and skip it for a while after a failure, otherwise every keystroke in the

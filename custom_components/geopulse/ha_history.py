@@ -42,7 +42,7 @@ JOURNEY_MIN_AVG_KMH = 1.0
 HOME_RADIUS_M = 150
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/reverse"
 NOMINATIM_MIN_INTERVAL = 1.1
-NOMINATIM_USER_AGENT = "GeoPulse/2.0 (Home Assistant)"
+NOMINATIM_USER_AGENT = "TraceBook/2.0 (Home Assistant)"
 
 
 @dataclass(slots=True)

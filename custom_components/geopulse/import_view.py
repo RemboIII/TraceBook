@@ -48,7 +48,7 @@ def _read_and_remove(path: Path) -> bytes:
         path.unlink(missing_ok=True)
 
 
-class GeoPulseImportView(HomeAssistantView):
+class TraceBookImportView(HomeAssistantView):
     url = "/api/geopulse/import/{entity_id}"
     name = "api:geopulse:import"
     requires_auth = True
